@@ -37,7 +37,7 @@ const SIMD_PROBE = new Uint8Array([
 
 export async function detectCapabilities(nav: Navigator = navigator): Promise<Capabilities & { gpuInfo: string | null }> {
   const wasm = typeof WebAssembly === 'object' && typeof WebAssembly.instantiate === 'function';
-  let wasmSimd = false;
+  let wasmSimd: boolean;
   try {
     wasmSimd = wasm && WebAssembly.validate(SIMD_PROBE);
   } catch {
@@ -46,7 +46,7 @@ export async function detectCapabilities(nav: Navigator = navigator): Promise<Ca
   let webgpu = false;
   let shaderF16 = false;
   let gpuInfo: string | null = null;
-  const gpu = (nav as Navigator & { gpu?: { requestAdapter(): Promise<any> } }).gpu; // eslint-disable-line @typescript-eslint/no-explicit-any
+  const gpu = (nav as Navigator & { gpu?: { requestAdapter(): Promise<unknown> } }).gpu;
   if (gpu) {
     try {
       const adapter = await Promise.race([gpu.requestAdapter(), new Promise((r) => setTimeout(() => r(null), 3000))]);
@@ -131,7 +131,7 @@ export async function runDiagnostics(boot: BootResult): Promise<Check[]> {
     status: edge ? 'ok' : 'info',
     value: edge ? `Microsoft Edge ${edge.version}` : ua?.brands?.map((b) => `${b.brand} ${b.version}`).join(', ') || 'inconnu',
   });
-  let storageOk: boolean | null = null;
+  let storageOk: boolean;
   try {
     const k = '__aoia_probe__';
     localStorage.setItem(k, '1');
@@ -167,7 +167,7 @@ export async function runDiagnostics(boot: BootResult): Promise<Check[]> {
     detail: policy === false ? 'Utiliser la dictée en fenêtre séparée.' : undefined,
   });
   try {
-    const perm = await navigator.permissions?.query({ name: 'microphone' as PermissionName });
+    const perm = await navigator.permissions?.query({ name: 'microphone' });
     checks.push({
       id: 'mic-perm',
       group: 'Microphone',

@@ -22,10 +22,24 @@ export default tseslint.config(
     },
   },
   {
+    // Scripts Node (tests navigateur, audit, manifest) et fichiers de configuration : règles sans typage.
     files: ['scripts/**/*.mjs', '*.config.*', 'eslint.config.js'],
     ...tseslint.configs.disableTypeChecked,
-    languageOptions: { globals: { ...globals.node, ...globals.browser } },
-    rules: { 'no-console': 'off' },
+    languageOptions: {
+      ...tseslint.configs.disableTypeChecked.languageOptions,
+      globals: { ...globals.node, ...globals.browser },
+    },
+    rules: { ...tseslint.configs.disableTypeChecked.rules, 'no-console': 'off' },
+  },
+  {
+    // AudioWorklet (JavaScript simple servi tel quel, hors compilation TypeScript).
+    files: ['public/**/*.js'],
+    ...tseslint.configs.disableTypeChecked,
+    languageOptions: {
+      ...tseslint.configs.disableTypeChecked.languageOptions,
+      sourceType: 'script',
+      globals: { ...globals.audioWorklet },
+    },
   },
   {
     files: ['tests/**/*.ts'],

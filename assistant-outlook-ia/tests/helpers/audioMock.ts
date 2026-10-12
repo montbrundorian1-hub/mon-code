@@ -51,6 +51,7 @@ export function installAudioMocks(getUserMedia: () => Promise<unknown>) {
   class FakeWorkletNode {
     port = { onmessage: null as ((ev: MessageEvent) => void) | null };
     constructor() {
+      // eslint-disable-next-line @typescript-eslint/no-this-alias -- le test doit retrouver le nœud créé par le code testé
       lastWorkletNode = this;
     }
     connect() {}

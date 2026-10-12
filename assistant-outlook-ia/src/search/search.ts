@@ -216,8 +216,8 @@ export class DemoSearchProvider implements MailboxSearchProvider {
   unavailableReason(): string | null {
     return null;
   }
-  async search(q: SearchQuery): Promise<SearchHit[]> {
-    return searchMessages(this.messages, q);
+  search(q: SearchQuery): Promise<SearchHit[]> {
+    return Promise.resolve(searchMessages(this.messages, q));
   }
 }
 
@@ -230,7 +230,7 @@ export class ExchangeSearchProvider implements MailboxSearchProvider {
   unavailableReason(): string {
     return 'Désactivée en V1 : nécessiterait la permission ReadWriteMailbox (EWS), une configuration serveur et une autorisation explicite du CHU.';
   }
-  async search(): Promise<SearchHit[]> {
-    throw new Error(this.unavailableReason());
+  search(): Promise<SearchHit[]> {
+    return Promise.reject(new Error(this.unavailableReason()));
   }
 }

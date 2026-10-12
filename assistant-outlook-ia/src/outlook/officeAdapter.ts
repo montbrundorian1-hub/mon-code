@@ -199,7 +199,7 @@ export class OfficeMailHost implements MailHost {
     const getAsync = body.getAsync.bind(body);
     try {
       // HTML recommandé par Microsoft pour une mise en forme fiable dans OWA, converti localement en texte.
-      const html = await call<string>((cb) => getAsync(Office.CoercionType.Html as unknown as string, cb));
+      const html = await call<string>((cb) => getAsync(Office.CoercionType.Html, cb));
       return htmlToText(html);
     } catch (e) {
       throw new Error(officeErrorText(e), { cause: e });

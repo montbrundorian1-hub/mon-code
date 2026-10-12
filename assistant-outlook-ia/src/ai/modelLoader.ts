@@ -203,7 +203,7 @@ export class ModelHandle {
         }, opts.timeoutMs);
       }
       this.pending.set(id, pending);
-      this.post({ ...payload, id } as WorkerRequest, opts.transfer ?? []);
+      this.post({ ...payload, id }, opts.transfer ?? []);
     });
   }
 

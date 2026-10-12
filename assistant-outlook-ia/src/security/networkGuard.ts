@@ -138,14 +138,17 @@ export function installNetworkGuard(pol: GuardPolicy, scope: typeof globalThis =
 
   if (g.XMLHttpRequest) {
     const proto = g.XMLHttpRequest.prototype;
+    // Méthodes d'origine capturées volontairement sans liaison : elles sont rappelées avec .call(this, …).
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     const originalOpen = proto.open;
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     const originalSend = proto.send;
     const meta = new WeakMap<XMLHttpRequest, { url: string; method: string }>();
     proto.open = function (this: XMLHttpRequest, method: string, url: string | URL, ...rest: unknown[]) {
       meta.set(this, { url: String(url), method });
       // @ts-expect-error signature variadique d'origine
       return originalOpen.call(this, method, url, ...rest);
-    } as typeof proto.open;
+    };
     proto.send = function (this: XMLHttpRequest, body?: Document | XMLHttpRequestBodyInit | null) {
       const m = meta.get(this) ?? { url: '', method: 'GET' };
       const ev = evaluateRequest(m.url, m.method, body != null, policy!);

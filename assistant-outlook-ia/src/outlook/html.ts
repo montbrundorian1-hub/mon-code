@@ -48,5 +48,5 @@ export function htmlToText(html: string): string {
   doc.querySelectorAll('script,style,head').forEach((n) => n.remove());
   doc.querySelectorAll('br').forEach((n) => n.replaceWith('\n'));
   doc.querySelectorAll('p,div,li,tr,h1,h2,h3').forEach((n) => n.append('\n'));
-  return (doc.body.textContent ?? '').replace(/ /g, ' ').replace(/\n{3,}/g, '\n\n').trim();
+  return (doc.body.textContent ?? '').replace(/\u00A0/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
 }

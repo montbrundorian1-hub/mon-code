@@ -119,11 +119,11 @@ export function normalizeTypography(text: string): string {
     .replace(/\s*([;:!?])/g, ' $1')
     .replace(/«\s*/g, '« ')
     .replace(/\s*»/g, ' »')
-    .replace(/(\d) :(\d)/g, '$1:$2') // heures « 14:30 »
+    .replace(/(\d)\u00A0:(\d)/g, '$1:$2') // heures « 14:30 »
     // Espace insécable entre un nombre et son unité, et dans « 14 h 30 » (pas de coupure en fin de ligne).
     .replace(/(\d) (?=(?:h|mg|g|µg|ml|kg|l|ui|UI|mmol|%|€|cp|jours?|semaines?|mois|heures?|min)(?![\p{L}]))/gu, '$1\u00A0')
     .replace(/(\d\u00A0h) (?=\d)/g, '$1\u00A0')
-    .replace(/(https?) :/g, '$1:')
+    .replace(/(https?)\u00A0:/g, '$1:')
     .trim();
   // Majuscule en début de phrase et de ligne
   s = s.replace(/(^|[.!?…]\s+|\n\s*)(\p{Ll})/gu, (_m, p: string, c: string) => p + c.toUpperCase());

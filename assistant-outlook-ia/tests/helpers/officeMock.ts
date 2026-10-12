@@ -34,7 +34,9 @@ export function installOfficeMock(o: OfficeMockOptions) {
       calls.getAsync(type);
       cb(ok(o.body ?? '<div>Bonjour,</div><div>Message fictif de test.</div>'));
     },
-    setAsync: (...a: unknown[]) => calls.setAsync(...a),
+    setAsync: (...a: unknown[]) => {
+      calls.setAsync(...a);
+    },
   };
   if (o.mode === 'compose') {
     if (o.withSetSelected !== false) {

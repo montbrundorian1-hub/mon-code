@@ -114,7 +114,7 @@ describe('Dictée', () => {
     const { gum } = installAudioMocks(async () => new FakeStream());
     const session = new DictationSession({ engine: new FakeEngine() });
     await session.start();
-    await session.pause();
+    session.pause();
     expect(session.snapshot().status).toBe('paused');
     expect(gum).toHaveBeenCalledTimes(1);
     await session.resume();

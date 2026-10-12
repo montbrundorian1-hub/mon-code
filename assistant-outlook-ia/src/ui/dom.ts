@@ -10,16 +10,21 @@ type Props = Record<string, unknown> & {
   dataset?: Record<string, string>;
 };
 
+/** Valeur d'attribut : seules les valeurs simples sont converties (jamais « [object Object] »). */
+function attrText(v: unknown): string {
+  return typeof v === 'string' ? v : typeof v === 'number' || typeof v === 'bigint' ? String(v) : '';
+}
+
 export function h<K extends keyof HTMLElementTagNameMap>(tag: K, props: Props = {}, ...children: Child[]): HTMLElementTagNameMap[K] {
   const el = document.createElement(tag);
   for (const [k, v] of Object.entries(props)) {
     if (v === undefined || v === null || v === false) continue;
-    if (k === 'class') el.className = String(v);
-    else if (k === 'style') el.setAttribute('style', String(v));
+    if (k === 'class') el.className = attrText(v);
+    else if (k === 'style') el.setAttribute('style', attrText(v));
     else if (k === 'dataset') Object.assign(el.dataset, v as Record<string, string>);
     else if (k.startsWith('on') && typeof v === 'function') el.addEventListener(k.slice(2).toLowerCase(), v as EventListener);
     else if (k in el && typeof v !== 'string') (el as unknown as Record<string, unknown>)[k] = v;
-    else el.setAttribute(k, v === true ? '' : String(v));
+    else el.setAttribute(k, v === true ? '' : attrText(v));
   }
   append(el, children);
   return el;
@@ -110,7 +115,7 @@ export async function copyText(text: string): Promise<boolean> {
     ta.value = text;
     document.body.append(ta);
     ta.select();
-    let ok = false;
+    let ok: boolean;
     try {
       ok = document.execCommand('copy');
     } catch {

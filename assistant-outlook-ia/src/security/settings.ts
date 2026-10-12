@@ -70,7 +70,7 @@ const listeners = new Set<(s: Settings) => void>();
 
 export function loadSettings(): Settings {
   if (current) return current;
-  let parsed: unknown = null;
+  let parsed: unknown;
   try {
     const raw = storage()?.getItem(STORAGE_KEY);
     parsed = raw ? JSON.parse(raw) : null;

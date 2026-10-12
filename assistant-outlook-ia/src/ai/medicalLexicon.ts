@@ -82,7 +82,7 @@ export function normalizeWord(s: string): string {
 /** Distance de Levenshtein bornée (renvoie max+1 si dépassée). */
 export function levenshtein(a: string, b: string, max = 3): number {
   if (Math.abs(a.length - b.length) > max) return max + 1;
-  const prev = new Array(b.length + 1);
+  const prev = new Array<number>(b.length + 1);
   for (let j = 0; j <= b.length; j++) prev[j] = j;
   for (let i = 1; i <= a.length; i++) {
     let rowMin = Infinity;

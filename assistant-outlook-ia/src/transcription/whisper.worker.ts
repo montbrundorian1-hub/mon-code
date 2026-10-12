@@ -17,7 +17,7 @@ let asr: AsrPipeline | null = null;
 
 async function transcribe(msg: TranscribeRequest): Promise<void> {
   if (!asr) throw new Error('Modèle non chargé');
-  let audio: Float32Array | null = msg.audio;
+  const audio = msg.audio;
   const long = audio.length > 16000 * 30;
   const t0 = performance.now();
   const out = await asr(audio, {
@@ -27,7 +27,6 @@ async function transcribe(msg: TranscribeRequest): Promise<void> {
     chunk_length_s: long ? 30 : undefined,
     stride_length_s: long ? 5 : undefined,
   });
-  audio = null; // libération explicite
   const text = cleanTranscript(Array.isArray(out) ? out.map((o) => o.text).join(' ') : out.text);
   scope.postMessage({ type: 'result', id: msg.id, final: msg.final, text, ms: Math.round(performance.now() - t0) });
 }
@@ -44,7 +43,7 @@ scope.onmessage = (ev: MessageEvent<WorkerRequest>) => {
           device: msg.device,
           progress_callback: progressForwarder((m) => scope.postMessage(m)),
         });
-        asr = p as unknown as AsrPipeline;
+        asr = p;
         // Préchauffage sur 1 s de silence : compile les shaders / alloue la mémoire.
         const t0 = performance.now();
         await asr(new Float32Array(16000), { language: 'french', task: 'transcribe' });

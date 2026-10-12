@@ -30,7 +30,7 @@ const READY_TIMEOUT_MS = 10000;
  * et les adresses ouvertes par Office portent le paramètre « _host_Info ».
  */
 export function isLikelyOfficeContext(win: Window): boolean {
-  let framed = false;
+  let framed: boolean;
   try {
     framed = win.self !== win.top;
   } catch {
