@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!--
+  Manifest XML classique de complément Outlook (MailApp), compatible Exchange on-premises.
+  FICHIER MODÈLE : ne pas importer tel quel. Générez manifest.xml / manifest.dev.xml avec :
+    npm run manifest -- https://votre-site.exemple/chemin/
+  Structure calquée sur le complément « Hello world » validé dans le webmail du CHU
+  (MailApp, Mailbox 1.1 + VersionOverrides 1.0 / Mailbox 1.3, ReadWriteItem, ShowTaskpane).
+-->
+<OfficeApp xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0"
+  xmlns:mailappor="http://schemas.microsoft.com/office/mailappversionoverrides/1.0" xsi:type="MailApp">
+  <Id>{{ID}}</Id>
+  <Version>{{VERSION}}</Version>
+  <ProviderName>Assistant Outlook IA (projet personnel)</ProviderName>
+  <DefaultLocale>fr-FR</DefaultLocale>
+  <DisplayName DefaultValue="{{NAME}}"/>
+  <Description DefaultValue="Dictée vocale et rédaction de mails assistées par IA open source exécutée localement. Aucun envoi automatique."/>
+  <IconUrl DefaultValue="{{BASE_URL}}assets/icon-64.png"/>
+  <HighResolutionIconUrl DefaultValue="{{BASE_URL}}assets/icon-128.png"/>
+  <SupportUrl DefaultValue="{{BASE_URL}}"/>
+  <AppDomains>
+    <AppDomain>{{ORIGIN}}</AppDomain>
+  </AppDomains>
+  <Hosts>
+    <Host Name="Mailbox"/>
+  </Hosts>
+  <Requirements>
+    <Sets>
+      <Set Name="Mailbox" MinVersion="1.1"/>
+    </Sets>
+  </Requirements>
+  <!-- Repli pour les clients ignorant VersionOverrides : panneau en lecture et en rédaction. -->
+  <FormSettings>
+    <Form xsi:type="ItemRead">
+      <DesktopSettings>
+        <SourceLocation DefaultValue="{{BASE_URL}}index.html"/>
+        <RequestedHeight>450</RequestedHeight>
+      </DesktopSettings>
+    </Form>
+    <Form xsi:type="ItemEdit">
+      <DesktopSettings>
+        <SourceLocation DefaultValue="{{BASE_URL}}index.html"/>
+      </DesktopSettings>
+    </Form>
+  </FormSettings>
+  <!-- Permission minimale : lecture/écriture de l'élément ouvert uniquement (pas de ReadWriteMailbox, pas d'EWS). -->
+  <Permissions>ReadWriteItem</Permissions>
+  <Rule xsi:type="RuleCollection" Mode="Or">
+    <Rule xsi:type="ItemIs" ItemType="Message" FormType="Read"/>
+    <Rule xsi:type="ItemIs" ItemType="Message" FormType="Edit"/>
+  </Rule>
+  <DisableEntityHighlighting>true</DisableEntityHighlighting>
+  <VersionOverrides xmlns="http://schemas.microsoft.com/office/mailappversionoverrides" xsi:type="VersionOverridesV1_0">
+    <Requirements>
+      <bt:Sets DefaultMinVersion="1.3">
+        <bt:Set Name="Mailbox"/>
+      </bt:Sets>
+    </Requirements>
+    <Hosts>
+      <Host xsi:type="MailHost">
+        <DesktopFormFactor>
+          <!-- Lecture d'un message -->
+          <ExtensionPoint xsi:type="MessageReadCommandSurface">
+            <OfficeTab id="TabDefault">
+              <Group id="aoiaReadGroup">
+                <Label resid="Group.Label"/>
+                <Control xsi:type="Button" id="aoiaReadOpenPane">
+                  <Label resid="Button.Label"/>
+                  <Supertip>
+                    <Title resid="Button.Label"/>
+                    <Description resid="Button.Tooltip"/>
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16"/>
+                    <bt:Image size="32" resid="Icon.32"/>
+                    <bt:Image size="80" resid="Icon.80"/>
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <SourceLocation resid="Taskpane.Url"/>
+                  </Action>
+                </Control>
+              </Group>
+            </OfficeTab>
+          </ExtensionPoint>
+          <!-- Rédaction d'un message -->
+          <ExtensionPoint xsi:type="MessageComposeCommandSurface">
+            <OfficeTab id="TabDefault">
+              <Group id="aoiaComposeGroup">
+                <Label resid="Group.Label"/>
+                <Control xsi:type="Button" id="aoiaComposeOpenPane">
+                  <Label resid="Button.Label"/>
+                  <Supertip>
+                    <Title resid="Button.Label"/>
+                    <Description resid="Button.Tooltip"/>
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16"/>
+                    <bt:Image size="32" resid="Icon.32"/>
+                    <bt:Image size="80" resid="Icon.80"/>
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <SourceLocation resid="Taskpane.Url"/>
+                  </Action>
+                </Control>
+              </Group>
+            </OfficeTab>
+          </ExtensionPoint>
+        </DesktopFormFactor>
+      </Host>
+    </Hosts>
+    <Resources>
+      <bt:Images>
+        <bt:Image id="Icon.16" DefaultValue="{{BASE_URL}}assets/icon-16.png"/>
+        <bt:Image id="Icon.32" DefaultValue="{{BASE_URL}}assets/icon-32.png"/>
+        <bt:Image id="Icon.80" DefaultValue="{{BASE_URL}}assets/icon-80.png"/>
+      </bt:Images>
+      <bt:Urls>
+        <bt:Url id="Taskpane.Url" DefaultValue="{{BASE_URL}}index.html"/>
+      </bt:Urls>
+      <bt:ShortStrings>
+        <bt:String id="Group.Label" DefaultValue="{{NAME}}"/>
+        <bt:String id="Button.Label" DefaultValue="Assistant IA"/>
+      </bt:ShortStrings>
+      <bt:LongStrings>
+        <bt:String id="Button.Tooltip" DefaultValue="Ouvrir l'assistant : dictée, rédaction, réponses (traitement local)."/>
+      </bt:LongStrings>
+    </Resources>
+  </VersionOverrides>
+</OfficeApp>

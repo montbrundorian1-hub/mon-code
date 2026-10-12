@@ -19,9 +19,6 @@ export const ALLOWED_EXTERNAL_HOSTS: ReadonlyArray<{ host: string; purpose: stri
   { host: '*.hf.co', purpose: 'CDN (Xet) des poids de modèles Hugging Face (GET uniquement)' },
 ];
 
-/** Préfixe des fichiers ONNX Runtime auto-hébergés (copiés au build depuis node_modules). */
-export const ORT_WASM_DIR = 'ort/';
-
 /** Nom du cache utilisé par Transformers.js pour les poids de modèles (pas de données utilisateur). */
 export const MODEL_CACHE_NAME = 'transformers-cache';
 

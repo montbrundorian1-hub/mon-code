@@ -23,6 +23,8 @@ export interface GuardPolicy {
   selfOrigin: string;
   /** Hôtes externes autorisés, avec joker « *. » pour les sous-domaines. */
   allowedHosts: string[];
+  /** Autorise les WebSocket de même origine (rechargement à chaud en développement uniquement). */
+  allowSameOriginWebSocket?: boolean;
 }
 
 const MAX_EVENTS = 200;
@@ -149,7 +151,7 @@ export function installNetworkGuard(pol: GuardPolicy, scope: typeof globalThis =
       const ev = evaluateRequest(m.url, m.method, body != null, policy!);
       record(ev);
       if (!ev.allowed) throw new BlockedRequestError(ev);
-      return originalSend.call(this, body);
+      return originalSend.call(this, body as XMLHttpRequestBodyInit | null | undefined);
     };
   }
 
@@ -166,12 +168,19 @@ export function installNetworkGuard(pol: GuardPolicy, scope: typeof globalThis =
 
   if (g.WebSocket) {
     const OriginalWS = g.WebSocket;
-    const Guarded = function (this: unknown, url: string | URL, protocols?: string | string[]) {
-      const ev = evaluateRequest(String(url).replace(/^ws/, 'http'), 'CONNECT', true, policy!);
-      record({ ...ev, allowed: false, reason: 'WebSocket non utilisé par l’application' });
-      throw new BlockedRequestError({ ...ev, allowed: false, reason: 'WebSocket interdit' });
-      // eslint-disable-next-line no-unreachable
-      return new OriginalWS(url, protocols);
+    const Guarded = function (url: string | URL, protocols?: string | string[]) {
+      const httpUrl = String(url).replace(/^ws/, 'http');
+      const sameOrigin = (() => {
+        try {
+          return new URL(httpUrl).host === new URL(policy!.selfOrigin).host;
+        } catch {
+          return false;
+        }
+      })();
+      if (policy!.allowSameOriginWebSocket && sameOrigin) return new OriginalWS(url, protocols);
+      const ev: GuardEvent = { ...evaluateRequest(httpUrl, 'CONNECT', true, policy!), allowed: false, reason: 'WebSocket interdit' };
+      record(ev);
+      throw new BlockedRequestError(ev);
     } as unknown as typeof WebSocket;
     g.WebSocket = Guarded;
   }
