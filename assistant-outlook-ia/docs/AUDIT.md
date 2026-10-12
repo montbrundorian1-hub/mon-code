@@ -33,6 +33,7 @@
 | Violations axe (7 vues × 2 thèmes) | 0 | **0** |
 | Débordements horizontaux (320 et 450 px) | 0 | **0** |
 | Test navigateur réel, sans IA | — | **20/20** (Whisper small chargé en 26 s, transcription exacte) |
+| Test navigateur réel, avec IA locale (Qwen3 0.6B) | 22/22 (ancienne interface) | **22/22** : proposition IA écartée par la garde de faits (« 2 semaines » omis), 0 requête vers `main` |
 | `npm audit` | 0 vulnérabilité | 0 vulnérabilité |
 
 ## Audit n°2 — constats et corrections

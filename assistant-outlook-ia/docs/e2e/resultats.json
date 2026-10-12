@@ -1,5 +1,5 @@
 {
- "date": "2026-10-12T18:27:14.841Z",
+ "date": "2026-10-12T23:16:50.538Z",
  "asr": "whisper-small",
  "llm": "qwen3-0.6b",
  "chromium": "141.0.7390.37",
@@ -7,12 +7,12 @@
   {
    "name": "Démarrage de l’application",
    "ok": true,
-   "detail": "1627 ms"
+   "detail": "878 ms"
   },
   {
    "name": "Mode démonstration détecté hors Outlook",
    "ok": true,
-   "detail": "Démo · rédaction"
+   "detail": "Démo · rédactionDémo · lecture"
   },
   {
    "name": "Téléchargement impossible sans consentement",
@@ -22,7 +22,7 @@
   {
    "name": "Chargement du modèle whisper-small (WASM)",
    "ok": true,
-   "detail": "43 s"
+   "detail": "25 s"
   },
   {
    "name": "Indicateur « Micro actif » visible",
@@ -37,7 +37,7 @@
   {
    "name": "Transcription locale obtenue",
    "ok": true,
-   "detail": "2 segment(s), 48 s : « Bonjour, Dr. Martin. Je vous écris au sujet de Mme Dupont, vue en consultation le 12 mars. Nous avons débuté l'amoxicilline à un gramme 3 fois par jour pendant 7 jours. Pouvez-vous la revoir dans 2 semaines? Merci d'avance. »"
+   "detail": "2 segment(s), 45 s : « Bonjour, Dr. Martin. Je vous écris au sujet de Mme Dupont, vue en consultation le 12 mars. Nous avons débuté l'amoxicilline à un gramme 3 fois par jour pendant 7 jours. Pouvez-vous la revoir dans 2 semaines? Merci d'avance. »"
   },
   {
    "name": "Doses conservées par la transcription (1 g, 3 fois, 7 jours)",
@@ -47,12 +47,12 @@
   {
    "name": "Mail rédigé (mode classique)",
    "ok": true,
-   "detail": "Bonjour Docteur Martin, ⏎  ⏎ Je vous écris au sujet de Mme Dupont, vue en consultation le 12 mars. Nous avons débuté l'amoxicilline à un gramme 3 fois par jour pendant 7 jours. Pouvez-vous la revoir dans 2 semaines ? ⏎  ⏎ Merci d'avance."
+   "detail": "Bonjour Docteur Martin, ⏎  ⏎ Je vous écris au sujet de Mme Dupont, vue en consultation le 12 mars. Nous avons débuté l'amoxicilline à un gramme 3 fois par jour pendant 7 jours. Pouvez-vous la revoir dans 2 semaines ? ⏎  ⏎ Merci d'avance."
   },
   {
    "name": "Panneau de vérification affiché",
    "ok": true,
-   "detail": "Dates, doses, nombres et médicaments de l’original retrouvés dans le texte rédigé. |  | Moteur : Mode classique (règles, sans IA) · 13 ms"
+   "detail": "Dates, doses, nombres et médicaments de l’original retrouvés dans le texte. |  | Moteur : Mode classique (règles, sans IA)"
   },
   {
    "name": "Comparaison original / rédigé",
@@ -82,7 +82,7 @@
   {
    "name": "Rédaction avec IA locale",
    "ok": true,
-   "detail": "69 s — proposition IA écartée par la garde de faits"
+   "detail": "67 s — proposition IA écartée par la garde de faits"
   },
   {
    "name": "Recherche sur messages fictifs",
@@ -107,7 +107,7 @@
   {
    "name": "Hôtes externes contactés uniquement dans la liste blanche",
    "ok": true,
-   "detail": "appsforoffice.microsoft.com, huggingface.co, us.aws.cdn.hf.co"
+   "detail": "officeapis.public.onecdn.static.microsoft, huggingface.co, us.aws.cdn.hf.co"
   },
   {
    "name": "Aucune requête externe avec envoi de données (POST/corps)",
