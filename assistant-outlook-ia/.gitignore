@@ -1,0 +1,20 @@
+node_modules/
+dist/
+public/ort/
+coverage/
+*.log
+.env
+.env.*
+# Ne jamais versionner d'enregistrements audio, d'exports de mails ou de diagnostics bruts
+*.wav
+*.mp3
+*.webm
+*.ogg
+*.eml
+*.msg
+*.pst
+exports/
+diagnostics-*.json
+# Modèles IA téléchargés localement (poids volumineux)
+models/
+.cache/
