@@ -16,7 +16,9 @@
 - [x] 5 — Rédaction : mode classique + IA locale optionnelle avec garde de faits/sens. Testée dans Chromium (Qwen3-0.6B).
 - [x] 6 — Tests : 113 tests Vitest OK ; test navigateur de bout en bout (`npm run e2e`).
 - [x] 7 — Documentation : README, ARCHITECTURE, COMPATIBILITY, SECURITY, DEPLOYMENT, USER_TESTS, ROADMAP, EXCHANGE_SEARCH_FEASIBILITY.
-- [x] 8 — Audit technique/esthétique/pratique (docs/AUDIT.md, `scripts/audit-ui.mjs`) : axe 31 → 0 violation, débordements 8 → 0, focus clavier stable pendant la dictée, rédaction de dictées non ponctuées améliorée. 113 tests.
+- [x] 8 — Audit n°1 technique/esthétique/pratique (docs/AUDIT.md, `scripts/audit-ui.mjs`) : axe 31 → 0 violation, débordements 8 → 0, focus clavier stable pendant la dictée, rédaction de dictées non ponctuées améliorée. 113 tests.
+- [x] 9 — Piste « reconnaissance vocale native locale » vérifiée (docs/PISTE_RECONNAISSANCE_NATIVE.md) : Edge 155/157 = français local indisponible (même avec l'option activée) ; Chrome 155 = moteur local réel mais aucun texte obtenu en conteneur. Whisper conservé.
+- [ ] 10 — Audit n°2 complet et détaillé + refonte visuelle (style ChatGPT, futuriste, accueillant) + corrections — EN COURS.
 
 ## Faits vérifiés
 - Exchange on-prem 2016/2019/SE : Mailbox 1.1–1.5 (doc Microsoft, 2026-10-12).
