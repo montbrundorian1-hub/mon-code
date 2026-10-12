@@ -495,6 +495,7 @@ export function composeView(ctx: AppContext): HTMLElement {
   document.addEventListener('aoia:generate', () => {
     composerMode = 'source';
     comp.setValue('');
+    refreshAi(); // le choix « IA locale » a pu être fait dans « Dicter »
     void generate(ctx.draft.source);
   });
   ctx.on('host', () => {
