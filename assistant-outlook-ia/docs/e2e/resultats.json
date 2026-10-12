@@ -1,0 +1,118 @@
+{
+ "date": "2026-10-12T18:27:14.841Z",
+ "asr": "whisper-small",
+ "llm": "qwen3-0.6b",
+ "chromium": "141.0.7390.37",
+ "results": [
+  {
+   "name": "Démarrage de l’application",
+   "ok": true,
+   "detail": "1627 ms"
+  },
+  {
+   "name": "Mode démonstration détecté hors Outlook",
+   "ok": true,
+   "detail": "Démo · rédaction"
+  },
+  {
+   "name": "Téléchargement impossible sans consentement",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "Chargement du modèle whisper-small (WASM)",
+   "ok": true,
+   "detail": "43 s"
+  },
+  {
+   "name": "Indicateur « Micro actif » visible",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "Micro libéré après arrêt",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "Transcription locale obtenue",
+   "ok": true,
+   "detail": "2 segment(s), 48 s : « Bonjour, Dr. Martin. Je vous écris au sujet de Mme Dupont, vue en consultation le 12 mars. Nous avons débuté l'amoxicilline à un gramme 3 fois par jour pendant 7 jours. Pouvez-vous la revoir dans 2 semaines? Merci d'avance. »"
+  },
+  {
+   "name": "Doses conservées par la transcription (1 g, 3 fois, 7 jours)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "Mail rédigé (mode classique)",
+   "ok": true,
+   "detail": "Bonjour Docteur Martin, ⏎  ⏎ Je vous écris au sujet de Mme Dupont, vue en consultation le 12 mars. Nous avons débuté l'amoxicilline à un gramme 3 fois par jour pendant 7 jours. Pouvez-vous la revoir dans 2 semaines ? ⏎  ⏎ Merci d'avance."
+  },
+  {
+   "name": "Panneau de vérification affiché",
+   "ok": true,
+   "detail": "Dates, doses, nombres et médicaments de l’original retrouvés dans le texte rédigé. |  | Moteur : Mode classique (règles, sans IA) · 13 ms"
+  },
+  {
+   "name": "Comparaison original / rédigé",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "Commande « transforme en liste »",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "Annuler restaure la version précédente",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "Insertion dans le brouillon simulé, signature conservée",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "Chargement du modèle de rédaction qwen3-0.6b",
+   "ok": true,
+   "detail": "37 s"
+  },
+  {
+   "name": "Rédaction avec IA locale",
+   "ok": true,
+   "detail": "69 s — proposition IA écartée par la garde de faits"
+  },
+  {
+   "name": "Recherche sur messages fictifs",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "Réponse guidée à un message fictif",
+   "ok": true,
+   "detail": "Bonjour Docteur Fictif, ⏎  ⏎ Je prépare la présentation du dossier de la chambre 14 (patient fictif) pour le staff le jeudi à 13 h 30. Je veux également obtenir les résultats de la biologie. ⏎  ⏎ Merc"
+  },
+  {
+   "name": "Page de diagnostic",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "Aucun contenu utilisateur dans localStorage/sessionStorage/IndexedDB",
+   "ok": true,
+   "detail": "{\"local\":[\"aoia.settings.v1\"],\"session\":[],\"idb\":[],\"caches\":[]}"
+  },
+  {
+   "name": "Hôtes externes contactés uniquement dans la liste blanche",
+   "ok": true,
+   "detail": "appsforoffice.microsoft.com, huggingface.co, us.aws.cdn.hf.co"
+  },
+  {
+   "name": "Aucune requête externe avec envoi de données (POST/corps)",
+   "ok": true,
+   "detail": ""
+  }
+ ]
+}

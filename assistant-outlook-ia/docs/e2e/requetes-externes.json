@@ -1,0 +1,380 @@
+[
+ {
+  "host": "appsforoffice.microsoft.com",
+  "protocol": "https:",
+  "method": "GET",
+  "hasBody": false,
+  "path": "/lib/1/hosted/office.js"
+ },
+ {
+  "host": "appsforoffice.microsoft.com",
+  "protocol": "https:",
+  "method": "GET",
+  "hasBody": false,
+  "path": "/lib/1/hosted/o15apptofilemappingtable.js"
+ },
+ {
+  "host": "huggingface.co",
+  "protocol": "https:",
+  "method": "GET",
+  "hasBody": false,
+  "path": "/onnx-community/whisper-small/resolve/main/config.json"
+ },
+ {
+  "host": "huggingface.co",
+  "protocol": "https:",
+  "method": "GET",
+  "hasBody": false,
+  "path": "/api/resolve-cache/models/onnx-community/whisper-small/36050c46d777d46dc4b5f43f6"
+ },
+ {
+  "host": "huggingface.co",
+  "protocol": "https:",
+  "method": "GET",
+  "hasBody": false,
+  "path": "/onnx-community/whisper-small/resolve/main/tokenizer_config.json"
+ },
+ {
+  "host": "huggingface.co",
+  "protocol": "https:",
+  "method": "GET",
+  "hasBody": false,
+  "path": "/api/resolve-cache/models/onnx-community/whisper-small/36050c46d777d46dc4b5f43f6"
+ },
+ {
+  "host": "huggingface.co",
+  "protocol": "https:",
+  "method": "GET",
+  "hasBody": false,
+  "path": "/onnx-community/whisper-small/resolve/main/preprocessor_config.json"
+ },
+ {
+  "host": "huggingface.co",
+  "protocol": "https:",
+  "method": "GET",
+  "hasBody": false,
+  "path": "/api/resolve-cache/models/onnx-community/whisper-small/36050c46d777d46dc4b5f43f6"
+ },
+ {
+  "host": "huggingface.co",
+  "protocol": "https:",
+  "method": "GET",
+  "hasBody": false,
+  "path": "/onnx-community/whisper-small/resolve/main/config.json"
+ },
+ {
+  "host": "huggingface.co",
+  "protocol": "https:",
+  "method": "GET",
+  "hasBody": false,
+  "path": "/onnx-community/whisper-small/resolve/main/onnx/encoder_model_quantized.onnx"
+ },
+ {
+  "host": "huggingface.co",
+  "protocol": "https:",
+  "method": "GET",
+  "hasBody": false,
+  "path": "/onnx-community/whisper-small/resolve/main/onnx/decoder_model_merged_quantized.o"
+ },
+ {
+  "host": "huggingface.co",
+  "protocol": "https:",
+  "method": "GET",
+  "hasBody": false,
+  "path": "/onnx-community/whisper-small/resolve/main/generation_config.json"
+ },
+ {
+  "host": "huggingface.co",
+  "protocol": "https:",
+  "method": "GET",
+  "hasBody": false,
+  "path": "/onnx-community/whisper-small/resolve/main/tokenizer.json"
+ },
+ {
+  "host": "us.aws.cdn.hf.co",
+  "protocol": "https:",
+  "method": "GET",
+  "hasBody": false,
+  "path": "/xet-bridge-us/6650c62b74664a42ddfb297a/5b20d769296267010c5666ecededa0140f447701"
+ },
+ {
+  "host": "huggingface.co",
+  "protocol": "https:",
+  "method": "GET",
+  "hasBody": false,
+  "path": "/api/resolve-cache/models/onnx-community/whisper-small/36050c46d777d46dc4b5f43f6"
+ },
+ {
+  "host": "huggingface.co",
+  "protocol": "https:",
+  "method": "GET",
+  "hasBody": false,
+  "path": "/api/resolve-cache/models/onnx-community/whisper-small/36050c46d777d46dc4b5f43f6"
+ },
+ {
+  "host": "us.aws.cdn.hf.co",
+  "protocol": "https:",
+  "method": "GET",
+  "hasBody": false,
+  "path": "/xet-bridge-us/6650c62b74664a42ddfb297a/4cae5e2025412f6703f4e0108b5a909f1a362693"
+ },
+ {
+  "host": "huggingface.co",
+  "protocol": "https:",
+  "method": "GET",
+  "hasBody": false,
+  "path": "/api/resolve-cache/models/onnx-community/whisper-small/36050c46d777d46dc4b5f43f6"
+ },
+ {
+  "host": "huggingface.co",
+  "protocol": "https:",
+  "method": "GET",
+  "hasBody": false,
+  "path": "/onnx-community/whisper-small/resolve/main/config.json"
+ },
+ {
+  "host": "huggingface.co",
+  "protocol": "https:",
+  "method": "GET",
+  "hasBody": false,
+  "path": "/api/resolve-cache/models/onnx-community/whisper-small/36050c46d777d46dc4b5f43f6"
+ },
+ {
+  "host": "huggingface.co",
+  "protocol": "https:",
+  "method": "GET",
+  "hasBody": false,
+  "path": "/onnx-community/whisper-small/resolve/main/preprocessor_config.json"
+ },
+ {
+  "host": "huggingface.co",
+  "protocol": "https:",
+  "method": "GET",
+  "hasBody": false,
+  "path": "/onnx-community/whisper-small/resolve/main/tokenizer.json"
+ },
+ {
+  "host": "huggingface.co",
+  "protocol": "https:",
+  "method": "GET",
+  "hasBody": false,
+  "path": "/onnx-community/whisper-small/resolve/main/tokenizer_config.json"
+ },
+ {
+  "host": "huggingface.co",
+  "protocol": "https:",
+  "method": "GET",
+  "hasBody": false,
+  "path": "/onnx-community/whisper-small/resolve/main/onnx/encoder_model_quantized.onnx"
+ },
+ {
+  "host": "huggingface.co",
+  "protocol": "https:",
+  "method": "GET",
+  "hasBody": false,
+  "path": "/onnx-community/whisper-small/resolve/main/onnx/decoder_model_merged_quantized.o"
+ },
+ {
+  "host": "huggingface.co",
+  "protocol": "https:",
+  "method": "GET",
+  "hasBody": false,
+  "path": "/onnx-community/whisper-small/resolve/main/generation_config.json"
+ },
+ {
+  "host": "huggingface.co",
+  "protocol": "https:",
+  "method": "GET",
+  "hasBody": false,
+  "path": "/api/resolve-cache/models/onnx-community/whisper-small/36050c46d777d46dc4b5f43f6"
+ },
+ {
+  "host": "huggingface.co",
+  "protocol": "https:",
+  "method": "GET",
+  "hasBody": false,
+  "path": "/api/resolve-cache/models/onnx-community/whisper-small/36050c46d777d46dc4b5f43f6"
+ },
+ {
+  "host": "huggingface.co",
+  "protocol": "https:",
+  "method": "GET",
+  "hasBody": false,
+  "path": "/api/resolve-cache/models/onnx-community/whisper-small/36050c46d777d46dc4b5f43f6"
+ },
+ {
+  "host": "us.aws.cdn.hf.co",
+  "protocol": "https:",
+  "method": "GET",
+  "hasBody": false,
+  "path": "/xet-bridge-us/6650c62b74664a42ddfb297a/5b20d769296267010c5666ecededa0140f447701"
+ },
+ {
+  "host": "huggingface.co",
+  "protocol": "https:",
+  "method": "GET",
+  "hasBody": false,
+  "path": "/api/resolve-cache/models/onnx-community/whisper-small/36050c46d777d46dc4b5f43f6"
+ },
+ {
+  "host": "us.aws.cdn.hf.co",
+  "protocol": "https:",
+  "method": "GET",
+  "hasBody": false,
+  "path": "/xet-bridge-us/6650c62b74664a42ddfb297a/4cae5e2025412f6703f4e0108b5a909f1a362693"
+ },
+ {
+  "host": "huggingface.co",
+  "protocol": "https:",
+  "method": "GET",
+  "hasBody": false,
+  "path": "/onnx-community/Qwen3-0.6B-ONNX/resolve/main/config.json"
+ },
+ {
+  "host": "huggingface.co",
+  "protocol": "https:",
+  "method": "GET",
+  "hasBody": false,
+  "path": "/api/resolve-cache/models/onnx-community/Qwen3-0.6B-ONNX/1e0a4a196ecabdf9a879664"
+ },
+ {
+  "host": "huggingface.co",
+  "protocol": "https:",
+  "method": "GET",
+  "hasBody": false,
+  "path": "/onnx-community/Qwen3-0.6B-ONNX/resolve/main/tokenizer_config.json"
+ },
+ {
+  "host": "huggingface.co",
+  "protocol": "https:",
+  "method": "GET",
+  "hasBody": false,
+  "path": "/api/resolve-cache/models/onnx-community/Qwen3-0.6B-ONNX/1e0a4a196ecabdf9a879664"
+ },
+ {
+  "host": "huggingface.co",
+  "protocol": "https:",
+  "method": "GET",
+  "hasBody": false,
+  "path": "/onnx-community/Qwen3-0.6B-ONNX/resolve/main/config.json"
+ },
+ {
+  "host": "huggingface.co",
+  "protocol": "https:",
+  "method": "GET",
+  "hasBody": false,
+  "path": "/onnx-community/Qwen3-0.6B-ONNX/resolve/main/onnx/model_quantized.onnx"
+ },
+ {
+  "host": "huggingface.co",
+  "protocol": "https:",
+  "method": "GET",
+  "hasBody": false,
+  "path": "/onnx-community/Qwen3-0.6B-ONNX/resolve/main/generation_config.json"
+ },
+ {
+  "host": "huggingface.co",
+  "protocol": "https:",
+  "method": "GET",
+  "hasBody": false,
+  "path": "/onnx-community/Qwen3-0.6B-ONNX/resolve/main/tokenizer.json"
+ },
+ {
+  "host": "us.aws.cdn.hf.co",
+  "protocol": "https:",
+  "method": "GET",
+  "hasBody": false,
+  "path": "/xet-bridge-us/680fffcdbe536d99d3cb19b9/157a49e0aed846b4204fafc8c33a14ad3a8cb8cc"
+ },
+ {
+  "host": "huggingface.co",
+  "protocol": "https:",
+  "method": "GET",
+  "hasBody": false,
+  "path": "/api/resolve-cache/models/onnx-community/Qwen3-0.6B-ONNX/1e0a4a196ecabdf9a879664"
+ },
+ {
+  "host": "us.aws.cdn.hf.co",
+  "protocol": "https:",
+  "method": "GET",
+  "hasBody": false,
+  "path": "/xet-bridge-us/680fffcdbe536d99d3cb19b9/14577b14575c295814540235bfaa7696c416f714"
+ },
+ {
+  "host": "huggingface.co",
+  "protocol": "https:",
+  "method": "GET",
+  "hasBody": false,
+  "path": "/api/resolve-cache/models/onnx-community/Qwen3-0.6B-ONNX/1e0a4a196ecabdf9a879664"
+ },
+ {
+  "host": "huggingface.co",
+  "protocol": "https:",
+  "method": "GET",
+  "hasBody": false,
+  "path": "/onnx-community/Qwen3-0.6B-ONNX/resolve/main/config.json"
+ },
+ {
+  "host": "huggingface.co",
+  "protocol": "https:",
+  "method": "GET",
+  "hasBody": false,
+  "path": "/onnx-community/Qwen3-0.6B-ONNX/resolve/main/tokenizer.json"
+ },
+ {
+  "host": "huggingface.co",
+  "protocol": "https:",
+  "method": "GET",
+  "hasBody": false,
+  "path": "/onnx-community/Qwen3-0.6B-ONNX/resolve/main/tokenizer_config.json"
+ },
+ {
+  "host": "huggingface.co",
+  "protocol": "https:",
+  "method": "GET",
+  "hasBody": false,
+  "path": "/api/resolve-cache/models/onnx-community/Qwen3-0.6B-ONNX/1e0a4a196ecabdf9a879664"
+ },
+ {
+  "host": "huggingface.co",
+  "protocol": "https:",
+  "method": "GET",
+  "hasBody": false,
+  "path": "/api/resolve-cache/models/onnx-community/Qwen3-0.6B-ONNX/1e0a4a196ecabdf9a879664"
+ },
+ {
+  "host": "us.aws.cdn.hf.co",
+  "protocol": "https:",
+  "method": "GET",
+  "hasBody": false,
+  "path": "/xet-bridge-us/680fffcdbe536d99d3cb19b9/14577b14575c295814540235bfaa7696c416f714"
+ },
+ {
+  "host": "huggingface.co",
+  "protocol": "https:",
+  "method": "GET",
+  "hasBody": false,
+  "path": "/onnx-community/Qwen3-0.6B-ONNX/resolve/main/onnx/model_quantized.onnx"
+ },
+ {
+  "host": "huggingface.co",
+  "protocol": "https:",
+  "method": "GET",
+  "hasBody": false,
+  "path": "/onnx-community/Qwen3-0.6B-ONNX/resolve/main/generation_config.json"
+ },
+ {
+  "host": "us.aws.cdn.hf.co",
+  "protocol": "https:",
+  "method": "GET",
+  "hasBody": false,
+  "path": "/xet-bridge-us/680fffcdbe536d99d3cb19b9/157a49e0aed846b4204fafc8c33a14ad3a8cb8cc"
+ },
+ {
+  "host": "huggingface.co",
+  "protocol": "https:",
+  "method": "GET",
+  "hasBody": false,
+  "path": "/api/resolve-cache/models/onnx-community/Qwen3-0.6B-ONNX/1e0a4a196ecabdf9a879664"
+ }
+]

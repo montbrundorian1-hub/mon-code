@@ -41,6 +41,10 @@ npm run dev         # http://localhost:3000 dans Edge (mode démonstration)
 2. `npm run manifest -- https://votre-adresse/` puis importer `manifest.xml` dans OWA (*Gérer les compléments → Ajouter un complément personnalisé → À partir d'un fichier*).
 3. Suivre [docs/USER_TESTS.md](docs/USER_TESTS.md) avec des textes inventés.
 
+## Preuves de test
+
+`docs/e2e/` : résultats du test navigateur de bout en bout (22/22), journal des requêtes externes, transcription obtenue et captures d'écran (données fictives).
+
 ## Documentation
 
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — modules, pipelines, choix techniques.

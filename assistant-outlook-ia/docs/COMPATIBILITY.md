@@ -68,7 +68,7 @@ Interprétation :
 | Granite 4.0 350M (Apache-2.0) | 580 Mo | ❌ supprime la moitié du message | ❌ charabia sur les consignes |
 | **Qwen2.5-1.5B-Instruct** (Apache-2.0) | 1,2 Go (WebGPU f16) / 1,8 Go (WASM) | ❌ invente « comprimés » | ✅ correct (seule faute : « une gramme ») |
 
-Dans le navigateur (Chromium, WASM, 1 thread) : Qwen3-0.6B chargé en 41 s, ~60 s pour polir un mail court. Qwen2.5-1.5B en WASM est nettement plus lent : à réserver aux postes avec WebGPU.
+Dans le navigateur (Chromium, WASM, 1 thread) : Qwen3-0.6B chargé en 37–41 s, 62–69 s pour polir un mail court. Lors du second test, sa proposition (question transformée en affirmation) a été **écartée automatiquement** et la version classique conservée (`docs/e2e/resultats.json`, 22/22 vérifications réussies). Qwen2.5-1.5B en WASM est nettement plus lent : à réserver aux postes avec WebGPU.
 
 **Conclusion** : aucun modèle exécutable dans un navigateur sans GPU n'est assez fiable pour rédiger seul. Le **mode classique** est donc le cœur du produit ; l'IA est un polissage optionnel dont chaque proposition est vérifiée (dates, doses, nombres, médicaments, noms propres, questions, négations, couverture du contenu) et **écartée** en cas d'écart.
 
