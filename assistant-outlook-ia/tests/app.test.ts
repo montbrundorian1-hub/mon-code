@@ -8,7 +8,7 @@ import { mountApp, matchesShortcut } from '../src/ui/app';
 import type { BootResult } from '../src/outlook/bootstrap';
 
 function boot(host = new DemoMailHost()): BootResult {
-  return { host, officeScriptLoaded: false, officeHost: null, readyMs: null, error: null };
+  return { host, officeScriptLoaded: false, officeHost: null, readyMs: null, error: null, officeContext: false };
 }
 
 /** Worker factice : aucun modèle n'est chargé dans ces tests d'interface. */

@@ -30,8 +30,13 @@
     interruption, chargements concurrents), arrêt de génération (InterruptableStoppingCriteria), révisions figées (models.ts),
     DictationSession (état « starting », jeton d'annulation), commandes (remplacement par mot entier), formules de politesse, recherche
     (personnes connues, « avec », mots-clés optionnels si filtre), insertion signalée. 122 tests.
-  - RESTE : (a) Office.js nouveau domaine + détection du contexte Outlook dans bootstrap.ts (démo sans attente) + CSP/liste blanche ;
-    (b) robots.txt + meta ; (c) ESLint à 0 (script `npm run lint`) ; (d) tests ModelHandle/dictée/bootstrap/diagnostic ;
+  - FAIT (commit suivant) : (a) Office.js chargé depuis le CDN officiel actuel (officeapis.public.onecdn.static.microsoft) +
+    détection du contexte Outlook (cadre ou paramètre _host_Info) : ouverture directe = démo immédiate, sinon attente bornée à 10 s ;
+    CSP et liste blanche mises à jour ; (b) robots.txt (Disallow) + meta robots/description/color-scheme ;
+    (d) tests de robustesse (tests/robustness.test.ts : plantage, délai, interruption, chargements concurrents, double clic micro,
+    pause pendant l'autorisation) + tests de démarrage. 134 tests, tsc OK.
+  - RESTE : (c) ESLint à 0 (script `npm run lint`) ; réglage « ponctuation dictée » transmis par l'interface ; diagnostic (domaine
+    Office.js, état détaillé de la reconnaissance native) ;
     (e) REFONTE UI (styles.css nouveau design system, icônes contour, en-tête verre, navigation segmentée, accueil, orbe de dictée,
     fil de discussion + zone de saisie façon ChatGPT avec bouton Arrêter, recherche avec surlignage, Modèles en langage clair,
     Diagnostic avec synthèse, annonces lecteur d'écran, Ctrl+Entrée) ; (f) mise à jour tests UI/e2e/audit ; (g) mesures « après »
@@ -56,7 +61,7 @@
 ```bash
 cd assistant-outlook-ia
 npm install          # .npmrc désactive le téléchargement CUDA d'onnxruntime-node
-npm test             # 113 tests
+npm test             # 134 tests
 node scripts/audit-ui.mjs   # audit d'interface (après npm run build)
 npm run build
 npm run e2e -- --asr whisper-small          # test navigateur réel (télécharge ~250 Mo)

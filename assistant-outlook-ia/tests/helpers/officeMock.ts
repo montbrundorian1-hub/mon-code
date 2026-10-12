@@ -8,7 +8,7 @@ export interface OfficeMockOptions {
   /** Version Mailbox maximale prise en charge (ex. '1.5' pour Exchange 2016/2019). */
   maxMailbox: string;
   bodyType?: 'html' | 'text';
-  failSetSelected?: { code: number; message: string } | null;
+  failSetSelected?: { code: number | string; message: string } | null;
   withSetSelected?: boolean;
   withPrepend?: boolean;
   body?: string;

@@ -235,7 +235,7 @@ try {
   // 12. Vérification du trafic réseau
   const external = requests.filter((r) => !['localhost:4180'].includes(r.host) && !r.protocol.startsWith('blob') && !r.protocol.startsWith('data'));
   const hosts = [...new Set(external.map((r) => r.host))];
-  const allowed = (h) => h === 'appsforoffice.microsoft.com' || h === 'huggingface.co' || h.endsWith('.huggingface.co') || h.endsWith('.hf.co');
+  const allowed = (h) => h === 'officeapis.public.onecdn.static.microsoft' || h === 'appsforoffice.microsoft.com' || h === 'huggingface.co' || h.endsWith('.huggingface.co') || h.endsWith('.hf.co');
   const badHosts = hosts.filter((h) => !allowed(h));
   const withBody = external.filter((r) => r.method !== 'GET' && r.method !== 'HEAD' || r.hasBody);
   check('Hôtes externes contactés uniquement dans la liste blanche', badHosts.length === 0, hosts.join(', ') || 'aucun');

@@ -2,7 +2,7 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { bootstrapHost } from '../src/outlook/bootstrap';
+import { bootstrapHost, isLikelyOfficeContext } from '../src/outlook/bootstrap';
 import { OfficeMailHost } from '../src/outlook/officeAdapter';
 import { textToHtml } from '../src/outlook/html';
 import { DemoMailHost } from '../src/mock/demoHost';
@@ -20,7 +20,7 @@ describe('Initialisation Office.js (cas 3)', () => {
 
   it('détecte Outlook après Office.onReady', async () => {
     installOfficeMock({ mode: 'compose', maxMailbox: '1.5' });
-    const boot = await bootstrapHost();
+    const boot = await bootstrapHost(window, { officeContext: true });
     expect(boot.officeScriptLoaded).toBe(true);
     expect(boot.officeHost).toBe('Outlook');
     expect(boot.host).toBeInstanceOf(OfficeMailHost);
@@ -29,9 +29,45 @@ describe('Initialisation Office.js (cas 3)', () => {
   it('reste utilisable si Office.onReady échoue', async () => {
     const { Office } = installOfficeMock({ mode: 'compose', maxMailbox: '1.5' });
     (Office as { onReady: () => Promise<unknown> }).onReady = () => Promise.reject(new Error('échec simulé'));
-    const boot = await bootstrapHost();
+    const boot = await bootstrapHost(window, { officeContext: true });
     expect(boot.host).toBeInstanceOf(DemoMailHost);
     expect(boot.error).toMatch(/échec simulé/);
+  });
+});
+
+describe('Contexte d’ouverture (audit n°2)', () => {
+  it('ouverture directe dans le navigateur : démonstration immédiate, sans attendre Office.js', async () => {
+    const { Office } = installOfficeMock({ mode: 'compose', maxMailbox: '1.5' });
+    // Office.js actuel ne répond jamais hors d'Outlook : la promesse reste en attente.
+    (Office as { onReady: () => Promise<unknown> }).onReady = () => new Promise(() => undefined);
+    const t0 = performance.now();
+    const boot = await bootstrapHost(window, { officeContext: false });
+    expect(performance.now() - t0).toBeLessThan(200);
+    expect(boot.host).toBeInstanceOf(DemoMailHost);
+    expect(boot.officeContext).toBe(false);
+  });
+
+  it('dans Outlook mais Office.js muet : repli démonstration après le délai, sans blocage', async () => {
+    const { Office } = installOfficeMock({ mode: 'compose', maxMailbox: '1.5' });
+    (Office as { onReady: () => Promise<unknown> }).onReady = () => new Promise(() => undefined);
+    const boot = await bootstrapHost(window, { officeContext: true, timeoutMs: 50 });
+    expect(boot.host).toBeInstanceOf(DemoMailHost);
+    expect(boot.error).toMatch(/délai/);
+  });
+
+  it('détecte un panneau Outlook (cadre) ou une adresse ouverte par Office (_host_Info)', () => {
+    const framedWin = { location: { href: 'https://exemple.test/' } } as unknown as Window & { self: unknown; top: unknown };
+    (framedWin as { self: unknown }).self = framedWin;
+    (framedWin as { top: unknown }).top = {};
+    expect(isLikelyOfficeContext(framedWin)).toBe(true);
+    const topWin = { location: { href: 'https://exemple.test/?_host_Info=Outlook$Win32$16.02$fr-FR' } } as unknown as Window;
+    (topWin as unknown as { self: unknown; top: unknown }).self = topWin;
+    (topWin as unknown as { self: unknown; top: unknown }).top = topWin;
+    expect(isLikelyOfficeContext(topWin)).toBe(true);
+    const plain = { location: { href: 'https://exemple.test/' } } as unknown as Window;
+    (plain as unknown as { self: unknown; top: unknown }).self = plain;
+    (plain as unknown as { self: unknown; top: unknown }).top = plain;
+    expect(isLikelyOfficeContext(plain)).toBe(false);
   });
 });
 
