@@ -204,6 +204,7 @@ try {
   await page.waitForSelector('#btn-reply');
   await page.locator('textarea[aria-label="Intentions de réponse"]').fill('oui pour jeudi, je prépare la présentation et je veux bien les résultats de biologie');
   await page.locator('#btn-reply').click();
+  await page.waitForSelector('textarea[aria-label="Réponse (modifiable)"]', { timeout: 15 * 60000 });
   const reply = await page.locator('textarea[aria-label="Réponse (modifiable)"]').inputValue();
   check('Réponse guidée à un message fictif', /^Bonjour/.test(reply) && /jeudi/i.test(reply), reply.replace(/\n/g, ' ⏎ ').slice(0, 200));
   await shot('11-reponse');

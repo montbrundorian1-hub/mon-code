@@ -151,7 +151,7 @@ export function properNouns(text: string): string[] {
   while ((m = re.exec(text))) {
     const word = m[2];
     const before = text.slice(0, m.index + m[1].length);
-    const sentenceStart = /(^|[.!?…:]\s*|\n\s*|[«"]\s*)$/.test(before);
+    const sentenceStart = /(^|[.!?…:]\s*|\n\s*|[«"]\s*)$/.test(before) && !/\b(Dr|Pr|M|Mme|Mlle|Me)\.\s*$/.test(before);
     if (COMMON_CAPITALIZED.has(word)) continue;
     if (sentenceStart && word !== word.toUpperCase()) continue;
     if (word.length < 3 || /^(CRP|INR|NFS|ECG|IRM|TP|TCA|AVC|BPCO|HTA|CHU|SAMU|UI|OK)$/.test(word)) continue;
@@ -172,7 +172,13 @@ export function compareFacts(source: string, result: string): FactReport {
     list.some((x) => x.kind === f.kind && x.key === f.key) ||
     // une dose « 1 g » peut légitimement devenir le nombre « 1 » + « g » isolé : tolérance par clé
     list.some((x) => x.key === f.key);
-  const missing = a.filter((f) => !has(b, f));
-  const added = b.filter((f) => !has(a, f));
+  // Noms propres : présence du mot n'importe où dans l'autre texte (la position en début de
+  // phrase ou après « Dr. » ne doit pas créer de faux écart).
+  const words = (t: string) => new Set(stripAccents(t.toLowerCase()).match(/[a-z0-9'-]+/g) ?? []);
+  const wa = words(source);
+  const wb = words(result);
+  const present = (f: Fact, list: Fact[], w: Set<string>) => (f.kind === 'nom' ? w.has(stripAccents(f.key)) : has(list, f));
+  const missing = a.filter((f) => !present(f, b, wb));
+  const added = b.filter((f) => !present(f, a, wa));
   return { missing, added, ok: missing.length === 0 && added.length === 0 };
 }

@@ -1,0 +1,52 @@
+# Tests + build + déploiement GitHub Pages de l'Assistant Outlook IA.
+# GitHub Pages gratuit nécessite un dépôt PUBLIC (ou un abonnement GitHub payant) : voir
+# assistant-outlook-ia/docs/DEPLOYMENT.md. Sans Pages activé, seule l'étape de tests s'exécute.
+name: Assistant Outlook IA
+
+on:
+  push:
+    branches: [main]
+    paths: ['assistant-outlook-ia/**', '.github/workflows/assistant-outlook-ia.yml']
+  pull_request:
+    paths: ['assistant-outlook-ia/**', '.github/workflows/assistant-outlook-ia.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: assistant-outlook-ia
+
+jobs:
+  test-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: assistant-outlook-ia/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - uses: actions/upload-pages-artifact@v3
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        with:
+          path: assistant-outlook-ia/dist
+
+  deploy:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: test-build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

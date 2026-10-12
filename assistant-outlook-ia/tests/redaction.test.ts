@@ -1,6 +1,6 @@
 // Cas 18–20 : reformulation française fictive, vocabulaire médical, conservation des dates et doses.
 import { describe, expect, it } from 'vitest';
-import { aiRejection, Assistant, type TextGenerationProvider } from '../src/ai/assistant';
+import { aiRejection, Assistant, countNegations, type TextGenerationProvider } from '../src/ai/assistant';
 import { applyDictatedPunctuation, classicRewrite, removeHesitations, removeRepetitions, splitMail } from '../src/ai/classic';
 import { applyClassicCommand, parseCommand } from '../src/ai/commands';
 import { coverage } from '../src/ai/coverage';
@@ -184,5 +184,30 @@ describe('Comparaison et nettoyage', () => {
 
   it('noms propres : ignore les débuts de phrase et mots courants', () => {
     expect(properNouns('Bonjour Docteur Martin. Nous avons vu Madame DUPONT jeudi.')).toEqual(['Martin', 'Dupont']);
+  });
+});
+
+describe('Garde de faits — noms propres', () => {
+  it('pas de faux écart pour un nom placé après « Dr. » ou en début de phrase', () => {
+    expect(compareFacts('Bonjour, Dr. Martin. Je vous écris.', 'Bonjour Docteur Martin,\n\nJe vous écris.').ok).toBe(true);
+    expect(properNouns('Bonjour, Dr. Martin.')).toEqual(['Martin']);
+  });
+  it('signale un nom réellement ajouté', () => {
+    expect(compareFacts('Bonjour, je vous écris.', 'Bonjour, je vous écris.\n\nDocteur Leroy').added.map((f) => f.label)).toEqual(['Leroy']);
+  });
+});
+
+describe('Garde de sens — questions et négations (observé lors du test navigateur avec Qwen3-0.6B)', () => {
+  it('écarte une question transformée en affirmation', () => {
+    const ref = 'Bonjour,\n\nPouvez-vous la revoir dans 2 semaines ?\n\nMerci d’avance.';
+    expect(aiRejection(ref, 'Bonjour,\n\nVous pouvez la revoir dans 2 semaines merci d’avance.', 0.5)).toMatch(/question/);
+  });
+  it('écarte une négation ajoutée ou supprimée', () => {
+    expect(aiRejection('Le traitement ne doit pas être arrêté.', 'Le traitement doit être arrêté.', 0.5)).toMatch(/négation/);
+    expect(aiRejection('Le patient peut sortir.', 'Le patient ne peut pas sortir.', 0.5)).toMatch(/négation/);
+    expect(countNegations('Il n’a jamais eu de fièvre, sans allergie connue.')).toBe(2);
+    // « c'est pas » (oral) → « ce n'est pas » (écrit) : même nombre de négations, pas de rejet
+    expect(countNegations("c'est pas urgent")).toBe(countNegations("ce n'est pas urgent"));
+    expect(countNegations('il ne prend plus son traitement')).toBe(1);
   });
 });

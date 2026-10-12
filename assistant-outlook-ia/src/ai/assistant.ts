@@ -79,7 +79,27 @@ export function aiRejection(reference: string, aiText: string, minCoverage: numb
   if (added.length) return `Le modèle a ajouté : ${added.map(factLabel).join(', ')}.`;
   const cov = coverage(reference, aiText).ratio;
   if (cov < minCoverage) return `Le modèle a supprimé une partie du contenu (couverture ${Math.round(cov * 100)} %).`;
+  // Structure du sens : une question ne doit pas devenir une affirmation, ni une négation disparaître.
+  if (countQuestions(aiText) < countQuestions(reference)) return 'Le modèle a transformé une question en affirmation.';
+  if (countNegations(aiText) !== countNegations(reference)) return 'Le modèle a ajouté ou supprimé une négation (risque d’inversion du sens).';
   return null;
+}
+
+export function countQuestions(text: string): number {
+  return (text.match(/\?/g) ?? []).length;
+}
+
+/**
+ * Nombre de marqueurs de négation : particules « ne / n' » (une par négation verbale), « sans », « non ».
+ * Une différence entre source et proposition signale un risque d'inversion du sens.
+ */
+export function countNegations(text: string): number {
+  const t = ` ${text.toLowerCase().replace(/’/g, "'")} `;
+  const particles = (t.match(/[\s(«"]n(?:e\s|')/g) ?? []).length;
+  // À l'oral, le « ne » est souvent omis (« c'est pas ») : on compte aussi les mots de négation.
+  const words = (t.match(/[\s(«"'](?:pas|jamais|rien|aucun|aucune|guère|nullement)(?=[\s,.;:!?)»"-])/g) ?? []).length;
+  const others = (t.match(/[\s(«"](?:sans|non)(?=[\s,.;:!?)»"-])/g) ?? []).length;
+  return Math.max(particles, words) + others;
 }
 
 export interface DraftOptions {
