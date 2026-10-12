@@ -115,7 +115,9 @@ export function dictateView(ctx: AppContext, opts: { dialogMode?: boolean; onSen
     micButton.setAttribute('aria-pressed', String(s.status === 'listening'));
     micButton.disabled = !ready || s.status === 'finishing';
     timer.textContent = formatDuration(s.elapsedMs);
-    (meter.firstChild as HTMLElement).style.width = `${Math.min(100, Math.round(s.level * 900))}%`;
+    // Échelle logarithmique : -60 dB → 0 %, 0 dB → 100 %.
+    const db = s.level > 0 ? 20 * Math.log10(s.level) : -60;
+    (meter.firstChild as HTMLElement).style.width = `${Math.max(0, Math.min(100, Math.round(((db + 60) / 60) * 100)))}%`;
     const statusText: Record<string, string> = {
       idle: ready ? 'Micro inactif' : 'Chargez un modèle de transcription pour commencer',
       listening: 'Micro ACTIF — écoute en cours',

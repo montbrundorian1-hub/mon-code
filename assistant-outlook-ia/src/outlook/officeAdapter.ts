@@ -66,7 +66,14 @@ export class OfficeMailHost implements MailHost {
     }
     const item = this.item;
     const body = item?.body as AnyItem | undefined;
-    const mode: ItemMode = !item ? 'none' : typeof body?.setSelectedDataAsync === 'function' ? 'compose' : 'read';
+    // displayReplyForm n'existe qu'en lecture ; en composition, subject/to exposent getAsync.
+    const mode: ItemMode = !item
+      ? 'none'
+      : typeof item.displayReplyForm === 'function'
+        ? 'read'
+        : typeof item.subject?.getAsync === 'function' || typeof body?.setSelectedDataAsync === 'function' || typeof body?.prependAsync === 'function'
+          ? 'compose'
+          : 'read';
     const diag = Office.context?.diagnostics as unknown as { hostName?: string; hostVersion?: string; platform?: string } | undefined;
     this.cachedInfo = {
       kind: 'office',

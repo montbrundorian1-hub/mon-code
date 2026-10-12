@@ -58,7 +58,7 @@ export function resolveStyle(ctx: StyleContext, text = ''): ResolvedStyle {
     reason = 'Tutoiement détecté dans la dictée';
   } else if (recips.some((r) => titleOf(r.displayName))) {
     formality = 'formel';
-    reason = 'Destinataire avec titre (Dr / Pr)';
+    reason = 'Destinataire avec titre Dr ou Pr';
   } else if (recips.length === 0) {
     formality = 'courant';
     reason = 'Destinataire inconnu : ton professionnel courant';

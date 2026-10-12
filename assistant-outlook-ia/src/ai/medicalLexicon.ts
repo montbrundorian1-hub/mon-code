@@ -63,6 +63,8 @@ export const ASR_CORRECTIONS: ReadonlyArray<{ wrong: RegExp; right: string; note
   { wrong: /\bhéparine de bas poids moléculaire\b/gi, right: 'héparine de bas poids moléculaire', note: 'Terme' },
   { wrong: /\beno[x]?apar+ine\b/gi, right: 'enoxaparine', note: 'Orthographe du médicament' },
   { wrong: /\bfurose?mide\b/gi, right: 'furosémide', note: 'Orthographe du médicament' },
+  { wrong: /\bgrame(s?)\b/gi, right: 'gramme$1', note: 'Unité (orthographe)' },
+  { wrong: /\bmilligrame(s?)\b/gi, right: 'milligramme$1', note: 'Unité (orthographe)' },
   { wrong: /\bc\.?r\.?p\.?\b/gi, right: 'CRP', note: 'Sigle' },
   { wrong: /\bi\.?n\.?r\.?\b/gi, right: 'INR', note: 'Sigle' },
   { wrong: /\bn\.?f\.?s\.?\b/gi, right: 'NFS', note: 'Sigle' },

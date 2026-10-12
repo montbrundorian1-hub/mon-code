@@ -34,7 +34,7 @@ const NUMBER_WORDS: Record<string, number> = {
 
 const UNIT_ALIASES: Array<[RegExp, string]> = [
   [/^(mg|milligrammes?)$/, 'mg'],
-  [/^(g|grammes?|gr)$/, 'g'],
+  [/^(g|grammes?|grames?|gr)$/, 'g'],
   [/^(µg|ug|mcg|microgrammes?|gamma)$/, 'µg'],
   [/^(kg|kilos?|kilogrammes?)$/, 'kg'],
   [/^(ml|millilitres?|cc)$/, 'ml'],

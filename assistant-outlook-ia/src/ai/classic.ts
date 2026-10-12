@@ -72,11 +72,11 @@ export function applyAsrCorrections(text: string): { text: string; corrections: 
   const corrections: Correction[] = [];
   let s = text;
   for (const c of ASR_CORRECTIONS) {
-    s = s.replace(c.wrong, (m) => {
-      if (m === c.right) return m;
-      // Respecte la casse d'origine si l'erreur ne porte que sur la casse d'un sigle.
-      corrections.push({ from: m, to: c.right, note: c.note });
-      return c.right;
+    s = s.replace(c.wrong, (m, ...groups) => {
+      const right = c.right.replace(/\$(\d)/g, (_x, n: string) => (typeof groups[+n - 1] === 'string' ? (groups[+n - 1] as string) : ''));
+      if (m === right) return m;
+      corrections.push({ from: m, to: right, note: c.note });
+      return right;
     });
   }
   return { text: s, corrections };
@@ -84,7 +84,8 @@ export function applyAsrCorrections(text: string): { text: string; corrections: 
 
 const INVERSION_VERBS =
   'pouvez|pourriez|voulez|voudriez|avez|auriez|êtes|seriez|savez|sauriez|devez|devriez|pensez|connaissez|souhaitez|peux|pourrais|veux|voudrais|as|aurais|es|serais|sais|saurais|dois|penses';
-const INVERSION_RE = new RegExp(`\\b(${INVERSION_VERBS})\\s+(vous|tu)\\b`, 'gi');
+// Pas de trait d'union si le sujet précède déjà le verbe (« vous pouvez vous … » : forme pronominale).
+const INVERSION_RE = new RegExp(`(?<!\\b(?:vous|tu|je|il|elle|on)\\s)\\b(${INVERSION_VERBS})\\s+(vous|tu)\\b`, 'gi');
 const QUESTION_START = new RegExp(
   `^(?:(?:${INVERSION_VERBS})-(?:vous|tu)|est-ce que|est-ce qu'|qu'est-ce|quand|comment|pourquoi|combien|où|quel|quelle|quels|quelles)\\b`,
   'i',
@@ -133,7 +134,7 @@ const GREETING_RE = new RegExp(
   'u',
 );
 const CLOSING_ITEM =
-  "(?:je vous remercie(?: par avance| d'avance| de votre [^.!?\\n]{1,40}| pour [^.!?\\n]{1,40})?|merci(?: beaucoup| d'avance| par avance| à (?:vous|tous)| pour [^.!?\\n]{1,40})?|cordialement|bien cordialement|bien à vous|bonne (?:journée|soirée|fin de journée|semaine|continuation)|à bientôt|salutations distinguées|bien amicalement|amicalement|bises)";
+  "(?:je vous remercie(?: par avance| d['’]avance| de votre [^.!?\\n]{1,40}| pour [^.!?\\n]{1,40})?|merci(?: beaucoup| d['’]avance| par avance| à (?:vous|tous)| pour [^.!?\\n]{1,40})?|cordialement|bien cordialement|bien à vous|bonne (?:journée|soirée|fin de journée|semaine|continuation)|à bientôt|salutations distinguées|bien amicalement|amicalement|bises)";
 const CLOSING_RE = new RegExp(`(?:^|(?<=[.!?\\n,]\\s*))((?:${CLOSING_ITEM}\\s*[.!?,]?\\s*)+)$`, 'i');
 
 export interface MailParts {
@@ -151,8 +152,9 @@ export function splitMail(text: string): MailParts {
     greeting = g[0]
       .trim()
       .replace(/[.!:,]$/, '')
-      .replace(/\bDr\.?(?=\s)/, 'Docteur')
-      .replace(/\bPr\.?(?=\s)/, 'Professeur')
+      .replace(/\b[Dd]r\.?(?=\s)|\bdocteur\b/, 'Docteur')
+      .replace(/\b[Pp]r\.?(?=\s)|\bprofesseur\b/, 'Professeur')
+      .replace(/\b(madame|monsieur)\b/g, (t) => t.charAt(0).toUpperCase() + t.slice(1))
       .replace(/^(bonjour|bonsoir)\s*,\s*/i, '$1 ');
     greeting = `${greeting.charAt(0).toUpperCase()}${greeting.slice(1)},`;
     rest = rest.slice(g[0].length).trim();

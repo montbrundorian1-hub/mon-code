@@ -17,3 +17,7 @@ diagnostics-*.json
 # Modèles IA téléchargés localement (poids volumineux)
 models/
 .cache/
+
+# Exception : audio SYNTHÉTIQUE (voix de synthèse Piper, texte fictif) servant aux tests automatisés.
+!tests/fixtures/dictee-synthetique-fictive.wav
+e2e-results/

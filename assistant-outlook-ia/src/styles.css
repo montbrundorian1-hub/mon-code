@@ -68,7 +68,8 @@ body { min-width: 280px; }
 .tab.secondary { margin-left: auto; }
 .tab.secondary ~ .tab.secondary { margin-left: 0; }
 .tab:focus-visible, .btn:focus-visible, .mic-button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
-@media (max-width: 420px) { .tab.secondary .tab-label { display: none; } }
+@media (max-width: 560px) { .tab.secondary .tab-label { display: none; } .tab { padding: 8px 7px; } }
+@media (max-width: 360px) { .tab-label { font-size: 12px; } }
 
 .content { flex: 1; padding: 10px; outline: none; }
 .view { display: flex; flex-direction: column; gap: 10px; }
