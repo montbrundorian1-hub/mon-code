@@ -9,6 +9,7 @@
  */
 
 import type { ModelHandle } from '../ai/modelLoader';
+import type { ResultMessage } from '../ai/workerProtocol';
 
 export interface SegmentEngine {
   readonly label: string;
@@ -43,12 +44,16 @@ export class WhisperEngine implements SegmentEngine {
 
   async transcribe(audio: Float32Array, final: boolean): Promise<{ text: string; ms: number }> {
     const durMs = (audio.length / 16000) * 1000;
-    const r = await this.handle.request<{ text: string; ms: number }>({ type: 'transcribe', audio, final }, [audio.buffer]);
+    // Délai maximal généreux (poste lent, segment de 20 s) : évite toute attente infinie.
+    const r = await this.handle.request<ResultMessage>(
+      { type: 'transcribe', audio, final },
+      { transfer: [audio.buffer], timeoutMs: Math.max(60000, durMs * 12) },
+    );
     if (final && durMs > 1500) {
       const rtf = r.ms / durMs;
       this.rtf = this.rtf === null ? rtf : this.rtf * 0.6 + rtf * 0.4;
     }
-    return r;
+    return { text: r.text, ms: r.ms };
   }
 }
 

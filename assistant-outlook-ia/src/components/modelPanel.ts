@@ -161,7 +161,7 @@ function errorView(
   spec: ModelSpec,
   _variant: ModelVariant,
   message: string,
-  kind: 'memory' | 'network' | 'other',
+  kind: 'memory' | 'network' | 'crash' | 'other',
   retry: (spec: ModelSpec, variant: ModelVariant) => void,
 ): HTMLElement {
   const lighter = ctx.caps ? lighterThan(spec.id, family, ctx.caps) : null;

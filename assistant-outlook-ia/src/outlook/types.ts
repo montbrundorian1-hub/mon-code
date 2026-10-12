@@ -31,6 +31,8 @@ export type InsertMethod = 'setSelectedDataAsync' | 'prependAsync' | 'displayRep
 export interface InsertResult {
   ok: boolean;
   method?: InsertMethod;
+  /** Vrai si le curseur était indisponible : le texte a été inséré en tête du message. */
+  atStartInsteadOfCursor?: boolean;
   /** Message compréhensible et expurgé. */
   error?: string;
 }

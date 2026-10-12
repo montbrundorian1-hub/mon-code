@@ -24,6 +24,11 @@ export interface ModelSpec {
   id: string;
   family: ModelFamily;
   repo: string;
+  /**
+   * Révision Git (empreinte de commit) figée : garantit que les fichiers téléchargés sont exactement
+   * ceux qui ont été évalués, même si le dépôt Hugging Face est modifié ensuite.
+   */
+  revision: string;
   label: string;
   license: string;
   /** Mémoire vive conseillée (Go). */
@@ -43,6 +48,7 @@ export const ASR_MODELS: ModelSpec[] = [
     id: 'whisper-small',
     family: 'asr',
     repo: 'onnx-community/whisper-small',
+    revision: '36050c46d777d46dc4b5f43f6d90574fc38f8732',
     label: 'Whisper small (multilingue)',
     license: 'Apache-2.0 (OpenAI Whisper, MIT pour le code d’origine)',
     minMemoryGB: 4,
@@ -57,6 +63,7 @@ export const ASR_MODELS: ModelSpec[] = [
     id: 'whisper-base',
     family: 'asr',
     repo: 'onnx-community/whisper-base',
+    revision: '1846881b6b3a3024392c1eea3ad983695bc23925',
     label: 'Whisper base (multilingue)',
     license: 'Apache-2.0',
     minMemoryGB: 2,
@@ -73,6 +80,7 @@ export const ASR_MODELS: ModelSpec[] = [
     id: 'whisper-tiny',
     family: 'asr',
     repo: 'onnx-community/whisper-tiny',
+    revision: 'ff4177021cc41f7db950912b73ea4fdf7d01d8e7',
     label: 'Whisper tiny (multilingue)',
     license: 'Apache-2.0',
     minMemoryGB: 1,
@@ -88,6 +96,7 @@ export const ASR_MODELS: ModelSpec[] = [
     id: 'whisper-large-v3-turbo',
     family: 'asr',
     repo: 'onnx-community/whisper-large-v3-turbo',
+    revision: '360ebcde2559d60bb474678be3c1de9ef347d01a',
     label: 'Whisper large-v3 turbo (multilingue)',
     license: 'MIT',
     minMemoryGB: 8,
@@ -116,6 +125,7 @@ export const LLM_MODELS: ModelSpec[] = [
     id: 'qwen2.5-1.5b',
     family: 'llm',
     repo: 'onnx-community/Qwen2.5-1.5B-Instruct',
+    revision: 'd54957e3af1be04546436e874a60fe386041b244',
     label: 'Qwen2.5 1.5B Instruct',
     license: 'Apache-2.0',
     minMemoryGB: 8,
@@ -132,6 +142,7 @@ export const LLM_MODELS: ModelSpec[] = [
     id: 'qwen3-0.6b',
     family: 'llm',
     repo: 'onnx-community/Qwen3-0.6B-ONNX',
+    revision: '1e0a4a196ecabdf9a879664110574563d3f372d3',
     label: 'Qwen3 0.6B',
     license: 'Apache-2.0',
     minMemoryGB: 4,
@@ -148,6 +159,7 @@ export const LLM_MODELS: ModelSpec[] = [
     id: 'granite-4.0-350m',
     family: 'llm',
     repo: 'onnx-community/granite-4.0-350m-ONNX-web',
+    revision: '62fc8f345c8aed0e1a28f856dc7e79b4cdb55cae',
     label: 'Granite 4.0 350M',
     license: 'Apache-2.0',
     minMemoryGB: 2,

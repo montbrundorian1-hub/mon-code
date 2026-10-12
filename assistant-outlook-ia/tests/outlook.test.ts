@@ -55,7 +55,8 @@ describe('Exchange compatible (cas 4) / incompatible (cas 5)', () => {
   it('client sans setSelectedDataAsync : repli sur prependAsync (Mailbox 1.1)', async () => {
     const { calls } = installOfficeMock({ mode: 'compose', maxMailbox: '1.1', withSetSelected: false });
     const r = await new OfficeMailHost().insertText('Texte fictif', 'cursor');
-    expect(r).toEqual({ ok: true, method: 'prependAsync' });
+    // L'utilisateur est prévenu que le texte a été placé en tête du message (curseur indisponible).
+    expect(r).toEqual({ ok: true, method: 'prependAsync', atStartInsteadOfCursor: true });
     expect(calls.prependAsync).toHaveBeenCalledOnce();
   });
 
@@ -106,6 +107,13 @@ describe('Insertion (cas 22–24)', () => {
     const { calls } = installOfficeMock({ mode: 'compose', maxMailbox: '1.5', bodyType: 'text' });
     await new OfficeMailHost().insertText('Texte fictif', 'cursor');
     expect(calls.setSelectedDataAsync.mock.calls[0][1]).toEqual({ coercionType: 'text' });
+  });
+
+  it('curseur refusé par Outlook : repli en tête du message, signalé (audit n°2)', async () => {
+    const { calls } = installOfficeMock({ mode: 'compose', maxMailbox: '1.5', failSetSelected: { code: 'InvalidSelection', message: 'x' } });
+    const r = await new OfficeMailHost().insertText('Texte fictif', 'cursor');
+    expect(r).toEqual({ ok: true, method: 'prependAsync', atStartInsteadOfCursor: true });
+    expect(calls.prependAsync).toHaveBeenCalledOnce();
   });
 
   it('erreur Office.js d’insertion : message compréhensible (cas 23)', async () => {

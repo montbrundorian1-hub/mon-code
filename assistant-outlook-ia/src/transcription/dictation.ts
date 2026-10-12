@@ -11,7 +11,7 @@ import { classifyMicError, MicCapture, policyAllowsMicrophone, type MicError } f
 import { SpeechSegmenter, type SegmentEvent } from '../audio/segmenter';
 import type { SegmentEngine } from './engines';
 
-export type DictationStatus = 'idle' | 'listening' | 'paused' | 'finishing' | 'error';
+export type DictationStatus = 'idle' | 'starting' | 'listening' | 'paused' | 'finishing' | 'error';
 
 export interface Segment {
   id: number;
@@ -54,6 +54,8 @@ export class DictationSession {
   private partialBusy = false;
   private listeners = new Set<(s: DictationSnapshot) => void>();
   private timer: ReturnType<typeof setInterval> | null = null;
+  /** Incrémenté à chaque arrêt/pause/réinitialisation : invalide un démarrage encore en attente d'autorisation. */
+  private generation = 0;
   private readonly now: () => number;
 
   constructor(private readonly deps: DictationDeps) {
@@ -98,7 +100,8 @@ export class DictationSession {
   }
 
   async start(): Promise<boolean> {
-    if (this.status === 'listening') return true;
+    // Un seul démarrage à la fois (double-clic, raccourci répété) : sinon un micro resterait ouvert.
+    if (this.status === 'listening' || this.status === 'starting') return this.status === 'listening';
     if (!this.deps.engine.isReady()) {
       this.error = { kind: 'unknown', message: 'Chargez d’abord un modèle de transcription (onglet Modèles).' };
       this.status = 'error';
@@ -107,24 +110,35 @@ export class DictationSession {
     }
     this.error = null;
     this.notice = null;
+    const myGeneration = ++this.generation;
+    this.status = 'starting';
+    this.emit();
     const factory = this.deps.micFactory ?? ((cb) => new MicCapture(cb));
-    this.mic = factory({
+    const mic = factory({
       onAudio: (chunk) => this.onAudio(chunk),
       onLevel: (l) => {
         this.level = l;
       },
       onInterrupted: (reason) => {
         this.notice = `${reason} La transcription de ce qui a déjà été dicté est conservée.`;
-        void this.pause();
+        this.pause();
       },
     });
+    this.mic = mic;
     try {
-      await this.mic.start();
+      await mic.start();
     } catch (e) {
+      if (myGeneration !== this.generation) return false; // annulé entre-temps
       this.mic = null;
       this.error = classifyMicError(e, { policyAllowsMic: typeof document !== 'undefined' ? policyAllowsMicrophone() : null });
       this.status = 'error';
       this.emit();
+      return false;
+    }
+    if (myGeneration !== this.generation) {
+      // Arrêt demandé pendant la demande d'autorisation : on libère immédiatement le micro.
+      mic.stop();
+      if (this.mic === mic) this.mic = null;
       return false;
     }
     this.segmenter.setPartialInterval(this.deps.engine.supportsPartial() ? 1200 : 0);
@@ -185,7 +199,14 @@ export class DictationSession {
   }
 
   /** Pause : clôt le segment en cours et LIBÈRE le micro. */
-  async pause(): Promise<void> {
+  pause(): void {
+    if (this.status === 'starting') {
+      this.generation++;
+      this.releaseMic();
+      this.status = 'idle';
+      this.emit();
+      return;
+    }
     if (this.status !== 'listening') return;
     this.accumulated += this.now() - this.startedAt;
     const ev = this.segmenter.flush();
@@ -201,8 +222,14 @@ export class DictationSession {
     return this.start();
   }
 
+  /** Vrai si le micro est ouvert ou en cours d'ouverture. */
+  isCapturing(): boolean {
+    return this.status === 'listening' || this.status === 'starting';
+  }
+
   /** Arrêt : libère le micro puis attend la fin des transcriptions en cours. */
   async stop(): Promise<string> {
+    this.generation++;
     if (this.status === 'listening') {
       this.accumulated += this.now() - this.startedAt;
       const ev = this.segmenter.flush();
@@ -222,6 +249,7 @@ export class DictationSession {
 
   /** Efface tout (texte et audio en mémoire). */
   reset(): void {
+    this.generation++;
     this.releaseMic();
     this.segmenter.reset();
     this.segments = [];

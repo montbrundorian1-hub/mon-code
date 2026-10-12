@@ -58,9 +58,9 @@ export class AppContext {
     // Exclusivité du micro : une seule session peut écouter à la fois.
     for (const session of this.sessions()) {
       session.onChange((s) => {
-        if (s.status === 'listening') {
+        if (s.status === 'listening' || s.status === 'starting') {
           for (const other of this.sessions()) {
-            if (other !== session && other.snapshot().status === 'listening') void other.pause();
+            if (other !== session && other.isCapturing()) other.pause();
           }
         }
         this.emit('mic');
@@ -77,12 +77,12 @@ export class AppContext {
   }
 
   micActive(): boolean {
-    return this.sessions().some((s) => s.snapshot().status === 'listening');
+    return this.sessions().some((s) => s.isCapturing());
   }
 
   /** Arrêt d'urgence de toute capture audio (le texte déjà transcrit est conservé). */
   stopAllMic(): void {
-    for (const s of this.sessions()) if (s.snapshot().status === 'listening') void s.pause();
+    for (const s of this.sessions()) if (s.isCapturing()) s.pause();
   }
 
   on(event: 'models' | 'mic' | 'draft' | 'host', fn: () => void): () => void {

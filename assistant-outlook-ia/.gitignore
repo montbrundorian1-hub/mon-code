@@ -22,3 +22,4 @@ models/
 !tests/fixtures/dictee-synthetique-fictive.wav
 e2e-results/
 audit-results/
+coverage/

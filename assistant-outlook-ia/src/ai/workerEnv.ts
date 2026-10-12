@@ -7,6 +7,7 @@
 
 import { ALLOWED_EXTERNAL_HOSTS, MODEL_CACHE_NAME } from '../config';
 import { installNetworkGuard } from '../security/networkGuard';
+import type { ProgressMessage } from './workerProtocol';
 // Fichiers ONNX Runtime servis par l'application elle-même (noms versionnés par empreinte),
 // et non par le CDN tiers que Transformers.js utilise par défaut.
 import ortWasmUrl from 'onnxruntime-web/ort-wasm-simd-threaded.asyncify.wasm?url';
@@ -53,14 +54,6 @@ export async function loadTransformers(opts: WorkerEnvOptions): Promise<Transfor
     onnx.wasm.numThreads = isolated ? Math.min(4, navigator.hardwareConcurrency || 1) : 1;
   }
   return mod;
-}
-
-export interface ProgressMessage {
-  type: 'progress';
-  loaded: number;
-  total: number;
-  file?: string;
-  status: string;
 }
 
 /** Normalise les callbacks de progression de Transformers.js (aucun contenu utilisateur). */

@@ -4,66 +4,60 @@
  * L'audio reçu est traité puis immédiatement libéré ; rien n'est stocké.
  */
 
-import { errorMessage, loadTransformers, progressForwarder, type WorkerEnvOptions } from '../ai/workerEnv';
+import { errorMessage, loadTransformers, progressForwarder } from '../ai/workerEnv';
+import type { TranscribeRequest, TypedWorkerScope, WorkerRequest } from '../ai/workerProtocol';
+import { cleanTranscript } from './clean';
 
-type Pipe = (audio: Float32Array, opts: Record<string, unknown>) => Promise<{ text: string } | { text: string }[]>;
+const scope = self as unknown as TypedWorkerScope;
 
-let asr: (Pipe & { dispose?: () => Promise<void> }) | null = null;
-let device: 'webgpu' | 'wasm' = 'wasm';
+type AsrOutput = { text: string } | Array<{ text: string }>;
+type AsrPipeline = ((audio: Float32Array, opts: Record<string, unknown>) => Promise<AsrOutput>) & { dispose?: () => Promise<void> };
 
-/** Phrases « hallucinées » par Whisper sur du silence ou du bruit (corpus de sous-titres). */
-const HALLUCINATIONS = [
-  /sous-titr(es|age)\s+(réalisés?|fait|par).*$/i,
-  /amara\.org/i,
-  /merci d'avoir regardé/i,
-  /abonnez-vous/i,
-  /^\W*merci\.?\W*$/i,
-  /société radio-canada/i,
-  /^\W*(\.|…)+\W*$/,
-];
+let asr: AsrPipeline | null = null;
 
-function cleanText(t: string): string {
-  let s = t.trim();
-  for (const re of HALLUCINATIONS) if (re.test(s)) s = s.replace(re, '').trim();
-  return s;
+async function transcribe(msg: TranscribeRequest): Promise<void> {
+  if (!asr) throw new Error('Modèle non chargé');
+  let audio: Float32Array | null = msg.audio;
+  const long = audio.length > 16000 * 30;
+  const t0 = performance.now();
+  const out = await asr(audio, {
+    language: 'french',
+    task: 'transcribe',
+    return_timestamps: false,
+    chunk_length_s: long ? 30 : undefined,
+    stride_length_s: long ? 5 : undefined,
+  });
+  audio = null; // libération explicite
+  const text = cleanTranscript(Array.isArray(out) ? out.map((o) => o.text).join(' ') : out.text);
+  scope.postMessage({ type: 'result', id: msg.id, final: msg.final, text, ms: Math.round(performance.now() - t0) });
 }
 
-self.onmessage = async (ev: MessageEvent) => {
+scope.onmessage = (ev: MessageEvent<WorkerRequest>) => {
   const msg = ev.data;
-  try {
-    if (msg.type === 'load') {
-      const T = await loadTransformers(msg.env as WorkerEnvOptions);
-      device = msg.device;
-      const p = await T.pipeline('automatic-speech-recognition', msg.repo, {
-        dtype: msg.dtype,
-        device: msg.device,
-        progress_callback: progressForwarder((m) => self.postMessage(m)),
-      });
-      asr = p as unknown as typeof asr;
-      // Préchauffage sur 1 s de silence : compile les shaders / alloue la mémoire.
-      const t0 = performance.now();
-      await asr!(new Float32Array(16000), { language: 'french', task: 'transcribe' });
-      self.postMessage({ type: 'ready', device, warmupMs: Math.round(performance.now() - t0) });
-    } else if (msg.type === 'transcribe') {
-      if (!asr) throw new Error('Modèle non chargé');
-      let audio: Float32Array | null = msg.audio as Float32Array;
-      const t0 = performance.now();
-      const out = await asr(audio, {
-        language: 'french',
-        task: 'transcribe',
-        return_timestamps: false,
-        chunk_length_s: audio.length > 16000 * 30 ? 30 : undefined,
-        stride_length_s: audio.length > 16000 * 30 ? 5 : undefined,
-      });
-      audio = null; // libération explicite
-      const text = cleanText(Array.isArray(out) ? out.map((o) => o.text).join(' ') : out.text);
-      self.postMessage({ type: 'result', id: msg.id, final: msg.final, text, ms: Math.round(performance.now() - t0) });
-    } else if (msg.type === 'dispose') {
-      await asr?.dispose?.();
-      asr = null;
-      self.postMessage({ type: 'disposed' });
+  void (async () => {
+    try {
+      if (msg.type === 'load') {
+        const T = await loadTransformers(msg.env);
+        const p = await T.pipeline('automatic-speech-recognition', msg.repo, {
+          revision: msg.revision,
+          dtype: msg.dtype as never,
+          device: msg.device,
+          progress_callback: progressForwarder((m) => scope.postMessage(m)),
+        });
+        asr = p as unknown as AsrPipeline;
+        // Préchauffage sur 1 s de silence : compile les shaders / alloue la mémoire.
+        const t0 = performance.now();
+        await asr(new Float32Array(16000), { language: 'french', task: 'transcribe' });
+        scope.postMessage({ type: 'ready', device: msg.device, warmupMs: Math.round(performance.now() - t0) });
+      } else if (msg.type === 'transcribe') {
+        await transcribe(msg);
+      } else if (msg.type === 'dispose') {
+        await asr?.dispose?.();
+        asr = null;
+        scope.postMessage({ type: 'disposed' });
+      }
+    } catch (e) {
+      scope.postMessage({ type: 'error', id: 'id' in msg ? msg.id : undefined, message: errorMessage(e) });
     }
-  } catch (e) {
-    self.postMessage({ type: 'error', id: msg.id, message: errorMessage(e) });
-  }
+  })();
 };

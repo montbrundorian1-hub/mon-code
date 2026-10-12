@@ -58,3 +58,45 @@ describe('Analyse d’un message reçu fictif', () => {
     expect(t).not.toMatch(/\boui\b|\bnon\b|confirm/i);
   });
 });
+
+describe('Corrections de l’audit n°2 — recherche', () => {
+  const people = new DemoSearchProvider(DEMO_MESSAGES).people;
+  const run = (text: string) => searchMessages(DEMO_MESSAGES, parseQuery(text, NOW, people));
+
+  it('« documents de stage envoyés » (exemple proposé) trouve le message envoyé sur le stage', () => {
+    const q = parseQuery('documents de stage envoyés', NOW, people);
+    expect(q.from).toBeUndefined();
+    expect(q.folder).toBe('envoyés');
+    const hits = run('documents de stage envoyés');
+    expect(hits.length).toBeGreaterThan(0);
+    expect(hits[0].subject).toMatch(/stage/i);
+  });
+
+  it('« réponse du secrétariat » : expéditeur connu, même en minuscules', () => {
+    const q = parseQuery('réponse du secrétariat', NOW, people);
+    expect(q.from).toBe('secretariat');
+    expect(run('réponse du secrétariat').every((h) => /Secrétariat/.test(h.from))).toBe(true);
+    expect(run('réponse du secrétariat').length).toBeGreaterThan(0);
+  });
+
+  it('« avec » : expéditeur ou destinataire', () => {
+    const hits = run('échanges avec le Dr Fictif');
+    expect(hits.length).toBeGreaterThanOrEqual(3);
+    expect(hits.some((h) => h.folder === 'envoyés')).toBe(true);
+  });
+
+  it('un nom inconnu en majuscule est compris comme expéditeur, un mot courant non', () => {
+    expect(parseQuery('mails de Martin', NOW, people).from).toBe('martin');
+    expect(parseQuery('questions de biologie', NOW, people).from).toBeUndefined();
+  });
+
+  it('tous les exemples affichés dans l’interface donnent au moins un résultat', () => {
+    for (const ex of ['mails du Dr Fictif en mars', 'amoxicilline', 'documents de stage envoyés', 'planning des gardes']) {
+      expect(run(ex).length, ex).toBeGreaterThan(0);
+    }
+  });
+
+  it('les mots retrouvés sont indiqués pour la mise en évidence', () => {
+    expect(run('amoxicilline')[0].matched).toContain('amoxicillin');
+  });
+});

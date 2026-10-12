@@ -199,6 +199,26 @@ export function paragraphize(body: string): string {
   return paras.join('\n\n');
 }
 
+/** Formules qui, seules sur leur ligne, se terminent par une virgule (« Cordialement, »). */
+const COMMA_CLOSINGS =
+  /^(cordialement|bien cordialement|très cordialement|bien à vous|salutations distinguées|amicalement|bien amicalement|bonne (?:journée|soirée|semaine|fin de journée|continuation)|à bientôt|bises)$/i;
+
+/** Met en forme la formule de politesse : une formule par ligne, ponctuation finale correcte. */
+export function formatClosing(closing: string): string {
+  return normalizeTypography(closing)
+    .split(/(?<=[.!?,])\s+|\n+/)
+    .map((l) => l.trim().replace(/,$/, ''))
+    .filter(Boolean)
+    .map((l) => {
+      if (/[!?]$/.test(l)) return l; // ponctuation expressive dictée : conservée
+      const bare = l.replace(/[.…]$/, '').trim();
+      if (COMMA_CLOSINGS.test(bare)) return `${bare},`;
+      return /[.!?…]$/.test(l) ? l : `${l}.`;
+    })
+    .map((l) => l.charAt(0).toUpperCase() + l.slice(1))
+    .join('\n');
+}
+
 function ensureFinalPunctuation(s: string): string {
   const t = s.trim();
   if (!t) return t;
@@ -227,7 +247,7 @@ export function classicRewrite(
   const greeting = parts.greeting ?? (opts.addGreeting === false ? null : resolved.greeting);
   if (!parts.greeting && greeting) notes.push(`Formule d’appel ajoutée (${resolved.reason.toLowerCase()}).`);
   let closing = parts.closing;
-  if (closing) closing = normalizeTypography(closing).replace(/,\s*/g, '.\n').replace(/\.\s*$/, '.').replace(/\.\n$/, '.');
+  if (closing) closing = formatClosing(closing);
   if (!closing && opts.addClosing !== false) {
     closing = resolved.closing;
     notes.push('Formule de politesse ajoutée.');

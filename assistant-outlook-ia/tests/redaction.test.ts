@@ -13,7 +13,7 @@ import { resolveStyle } from '../src/ai/style';
 const DR = { recipients: [{ displayName: 'Dr MARTIN Paul' }], formality: 'auto' as const };
 
 /** Fournisseur IA simulé renvoyant un texte prédéfini. */
-const fakeAi = (out: string): TextGenerationProvider => ({ id: 'fake', label: 'IA simulée', isReady: () => true, generate: async () => out });
+const fakeAi = (out: string): TextGenerationProvider => ({ id: 'fake', label: 'IA simulée', isReady: () => true, generate: async () => ({ text: out, interrupted: false }) });
 
 describe('cas 18 — reformulation d’un mail français fictif (mode classique)', () => {
   it('structure formule d’appel / corps / politesse et nettoie la dictée', () => {
@@ -235,5 +235,19 @@ describe('Typographie et nombres (relevé lors de l’audit)', () => {
     expect(t).toContain('14\u00A0h\u00A030');
     expect(t).toContain('1\u00A0g');
     expect(t).toContain('7\u00A0jours');
+  });
+});
+
+describe('Corrections de l’audit n°2 — rédaction et commandes', () => {
+  it('formules de politesse : ponctuation finale correcte', async () => {
+    const { formatClosing } = await import('../src/ai/classic');
+    expect(formatClosing('merci')).toBe('Merci.');
+    expect(formatClosing('cordialement')).toBe('Cordialement,');
+    expect(formatClosing("Merci d'avance, bonne journée !")).toBe("Merci d'avance.\nBonne journée\u00A0!");
+    expect(formatClosing('bien à vous.')).toBe('Bien à vous,');
+  });
+  it('« remplace 12 par 13 » ne modifie pas « 112 »', () => {
+    expect(applyClassicCommand('Chambre 112, lit 12.', parseCommand('remplace 12 par 13')).text).toBe('Chambre 112, lit 13.');
+    expect(applyClassicCommand('Staff à 14 h 30 puis 14 h 30.', parseCommand('remplace 14 h 30 par 15 h')).message).toMatch(/2 remplacements/);
   });
 });

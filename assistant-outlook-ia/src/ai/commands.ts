@@ -204,10 +204,16 @@ export function applyClassicCommand(text: string, cmd: ParsedCommand): CommandRe
     }
     case 'replace': {
       if (!cmd.arg || !cmd.arg2) return { text, applied: false, message: 'Commande incomplète.' };
-      const esc = cmd.arg.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const re = new RegExp(esc, 'gi');
-      if (!re.test(text)) return { text, applied: false, message: `« ${cmd.arg} » introuvable dans le texte.` };
-      return { text: text.replace(re, cmd.arg2), applied: true, message: 'Remplacement effectué.' };
+      const esc = cmd.arg.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+');
+      // Mot ou nombre entier uniquement : « remplace 12 par 13 » ne touche pas « 112 ».
+      const re = new RegExp(`(?<![\\p{L}\\p{N}])${esc}(?![\\p{L}\\p{N}])`, 'giu');
+      const count = text.match(re)?.length ?? 0;
+      if (!count) return { text, applied: false, message: `« ${cmd.arg} » introuvable dans le texte.` };
+      return {
+        text: text.replace(re, cmd.arg2),
+        applied: true,
+        message: count > 1 ? `${count} remplacements effectués.` : 'Remplacement effectué.',
+      };
     }
     case 'remove-last-sentence': {
       const s = sentences(body);

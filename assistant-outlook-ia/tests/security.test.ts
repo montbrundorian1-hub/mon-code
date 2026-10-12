@@ -67,7 +67,7 @@ describe('cas 27 — garde réseau : aucune transmission de texte ou d’audio',
 
   it('la rédaction (classique comme IA locale) n’effectue aucune requête réseau', async () => {
     const spy = vi.spyOn(globalThis, 'fetch');
-    const a = new Assistant({ id: 'f', label: 'f', isReady: () => true, generate: async () => 'Bonjour,\n\nTexte fictif.\n\nCordialement,' });
+    const a = new Assistant({ id: 'f', label: 'f', isReady: () => true, generate: async () => ({ text: 'Bonjour,\n\nTexte fictif.\n\nCordialement,', interrupted: false }) });
     await a.draftFromDictation('bonjour texte fictif', { recipients: [], formality: 'auto' }, { useAi: true });
     await a.applyCommand('Bonjour,\n\nTexte fictif.', { kind: 'shorter', instruction: 'plus court' }, { useAi: true });
     expect(spy).not.toHaveBeenCalled();

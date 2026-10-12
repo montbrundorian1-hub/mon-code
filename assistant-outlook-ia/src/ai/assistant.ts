@@ -13,12 +13,20 @@ import { findUncertainMedicalTerms, type UncertainTerm } from './medicalLexicon'
 import { chatMessages, cleanLlmOutput, commandMessages, polishMessages, replyMessages, summaryMessages, type ChatMessage } from './prompts';
 import { resolveStyle, type StyleContext } from './style';
 
+export interface GenerationResult {
+  text: string;
+  /** Vrai si l'utilisateur a arrêté la génération avant la fin. */
+  interrupted: boolean;
+}
+
 /** Moteur de génération de texte interchangeable (LLM local, ou futur moteur autorisé). */
 export interface TextGenerationProvider {
   readonly id: string;
   readonly label: string;
   isReady(): boolean;
-  generate(messages: ChatMessage[], opts?: { maxNewTokens?: number; onToken?: (t: string) => void }): Promise<string>;
+  generate(messages: ChatMessage[], opts?: { maxNewTokens?: number; onToken?: (t: string) => void }): Promise<GenerationResult>;
+  /** Arrête la génération en cours (facultatif). */
+  interrupt?(): void;
 }
 
 export interface Validation {
@@ -39,6 +47,8 @@ export interface DraftOutcome {
   /** Version IA écartée par la validation, consultable à la demande. */
   rejectedAiText?: string;
   rejectionReason?: string;
+  /** Vrai si la génération IA a été arrêtée par l'utilisateur (version classique conservée). */
+  stopped?: boolean;
   notes: string[];
   validation: Validation;
   ms?: number;
@@ -145,7 +155,9 @@ export class Assistant {
     if (!opts.useAi || !this.aiAvailable()) return { ...base, ms: Math.round(performance.now() - t0) };
 
     const tone = TONE_HINT[resolveStyle(style, raw).formality];
-    const out = cleanLlmOutput(await this.provider!.generate(polishMessages(classic.text, tone), { onToken: opts.onToken, maxNewTokens: 500 }));
+    const gen = await this.provider!.generate(polishMessages(classic.text, tone), { onToken: opts.onToken, maxNewTokens: 500 });
+    if (gen.interrupted) return { ...base, stopped: true, notes: [...base.notes, 'Amélioration IA arrêtée : version sans IA conservée.'], ms: Math.round(performance.now() - t0) };
+    const out = cleanLlmOutput(gen.text);
     const reason = aiRejection(classic.text, out, 0.75, allowed);
     if (reason) {
       return { ...base, rejectedAiText: out, rejectionReason: reason, ms: Math.round(performance.now() - t0) };
@@ -165,15 +177,15 @@ export class Assistant {
     text: string,
     cmd: ParsedCommand,
     opts: { useAi?: boolean; onToken?: (t: string) => void } = {},
-  ): Promise<{ text: string; applied: boolean; message: string; engine: 'classique' | 'ia'; rejectedAiText?: string }> {
+  ): Promise<{ text: string; applied: boolean; message: string; engine: 'classique' | 'ia'; rejectedAiText?: string; stopped?: boolean }> {
     const classic = applyClassicCommand(text, cmd);
     const deterministic = ['replace', 'add', 'remove-last-sentence', 'to-list'].includes(cmd.kind);
     if (!opts.useAi || !this.aiAvailable() || (deterministic && classic.applied)) {
       return { ...classic, engine: 'classique' };
     }
-    const out = cleanLlmOutput(
-      await this.provider!.generate(commandMessages(text, cmd.instruction), { onToken: opts.onToken, maxNewTokens: 600 }),
-    );
+    const gen = await this.provider!.generate(commandMessages(text, cmd.instruction), { onToken: opts.onToken, maxNewTokens: 600 });
+    if (gen.interrupted) return { text, applied: false, message: 'Modification arrêtée : texte inchangé.', engine: 'classique', stopped: true };
+    const out = cleanLlmOutput(gen.text);
     const minCov = cmd.kind === 'shorter' ? 0.5 : 0.7;
     const reason = aiRejection(text, out, minCov, [cmd.instruction]);
     if (reason) {
@@ -211,12 +223,12 @@ export class Assistant {
       validation: validate(trimmed || classicText, classicText, classicBody.corrections, allowed),
     };
     if (!opts.useAi || !this.aiAvailable() || !trimmed) return base;
-    const out = cleanLlmOutput(
-      await this.provider!.generate(replyMessages(received, trimmed, resolved.greeting, resolved.closing), {
-        onToken: opts.onToken,
-        maxNewTokens: 500,
-      }),
-    );
+    const gen = await this.provider!.generate(replyMessages(received, trimmed, resolved.greeting, resolved.closing), {
+      onToken: opts.onToken,
+      maxNewTokens: 500,
+    });
+    if (gen.interrupted) return { ...base, stopped: true, notes: ['Génération IA arrêtée : version sans IA conservée.'] };
+    const out = cleanLlmOutput(gen.text);
     // Les faits de la réponse doivent provenir des intentions (ou être cités du message reçu).
     const reason = aiRejection(trimmed, out, 0.6, [received, resolved.greeting, ...allowed]);
     if (reason) return { ...base, rejectedAiText: out, rejectionReason: reason };
@@ -231,11 +243,18 @@ export class Assistant {
 
   async summarize(received: string, onToken?: (t: string) => void): Promise<string | null> {
     if (!this.aiAvailable()) return null;
-    return cleanLlmOutput(await this.provider!.generate(summaryMessages(received), { onToken, maxNewTokens: 200 }));
+    const gen = await this.provider!.generate(summaryMessages(received), { onToken, maxNewTokens: 200 });
+    return gen.interrupted ? null : cleanLlmOutput(gen.text);
   }
 
   async chat(history: ChatMessage[], context: string, onToken?: (t: string) => void): Promise<string | null> {
     if (!this.aiAvailable()) return null;
-    return cleanLlmOutput(await this.provider!.generate(chatMessages(history, context), { onToken, maxNewTokens: 400 }));
+    const gen = await this.provider!.generate(chatMessages(history, context), { onToken, maxNewTokens: 400 });
+    return cleanLlmOutput(gen.text) || (gen.interrupted ? null : '');
+  }
+
+  /** Arrête la génération IA en cours, s'il y en a une. */
+  stop(): void {
+    this.provider?.interrupt?.();
   }
 }

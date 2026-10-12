@@ -16,6 +16,8 @@ export interface SearchQuery {
   terms: string[];
   from?: string;
   to?: string;
+  /** Personne présente comme expéditeur OU destinataire (« avec … »). */
+  participant?: string;
   folder?: 'reçus' | 'envoyés';
   after?: Date;
   before?: Date;
@@ -30,6 +32,8 @@ export interface SearchHit {
   date: string;
   snippet: string;
   score: number;
+  /** Mots-clés effectivement retrouvés (pour la mise en évidence). */
+  matched: string[];
 }
 
 export interface MailboxSearchProvider {
@@ -53,29 +57,63 @@ const SYNONYMS: Record<string, string[]> = {
 };
 
 const QUERY_STOP = new Set(
-  'le la les un une des de du d l au aux et ou en dans par pour sur avec mes mon ma tous toutes tout les mails mail message messages courriel courriels email emails cherche chercher trouve trouver retrouve retrouver qui que quel quelle parle parlent parlant concernant sujet a propos montre affiche moi je j ai avais recu recus envoye envoyes'.split(
+  'le la les un une des de du d l au aux et ou en dans par pour sur avec mes mon ma tous toutes tout les mails mail message messages courriel courriels email emails cherche chercher trouve trouver retrouve retrouver qui que quel quelle parle parlent parlant concernant sujet a propos montre affiche moi je j ai avais recu recus envoye envoyes reponse reponses repondu'.split(
     ' ',
   ),
 );
 
-/** Analyse une requête en français : expéditeur, dossier, période, mots-clés. */
-export function parseQuery(raw: string, now: Date = new Date()): SearchQuery {
+const TITLE = '(?:dr\\.?|docteur|pr\\.?|professeur|mme|madame|m\\.|monsieur|la|le|l\')';
+
+/** Jetons de noms de personnes/services connus (expéditeurs et destinataires), normalisés. */
+export function peopleTokens(messages: DemoMessage[]): Set<string> {
+  const set = new Set<string>();
+  for (const m of messages) {
+    for (const p of [m.from, ...m.to]) {
+      for (const w of stripAccents(`${p.displayName} ${p.email.split('@')[0]}`.toLowerCase()).split(/[^a-z0-9]+/)) {
+        if (w.length >= 3 && !QUERY_STOP.has(w) && w !== 'demo') set.add(w);
+      }
+    }
+  }
+  return set;
+}
+
+/**
+ * Analyse une requête en français : expéditeur, destinataire, participant, dossier, période, mots-clés.
+ * « de X » / « du X » ne désigne un expéditeur que si X est un nom connu, écrit avec une majuscule,
+ * ou précédé d'un titre (« du Dr Fictif ») : « documents de stage » reste une recherche par mots-clés.
+ */
+export function parseQuery(raw: string, now: Date = new Date(), known: Set<string> = new Set()): SearchQuery {
   let s = ` ${stripAccents(raw.toLowerCase())} `;
+  const rawNorm = ` ${stripAccents(raw)} `;
   const q: SearchQuery = { raw, terms: [] };
 
   if (/\b(envoyes?|que j'ai envoye|mes envois)\b/.test(s)) q.folder = 'envoyés';
   else if (/\b(recus?|qu'on m'a envoye)\b/.test(s)) q.folder = 'reçus';
 
-  let m = s.match(/\b(?:de la part de|de la part du|venant de|envoyes? par|de|du)\s+(?:dr\.?|docteur|pr\.?|professeur|la|le)?\s*([a-z][a-z-]{2,})/);
-  if (m && !QUERY_STOP.has(m[1]) && !MONTHS.includes(m[1])) {
-    q.from = m[1];
+  const isPerson = (word: string, titled: boolean): boolean => {
+    if (QUERY_STOP.has(word) || MONTHS.includes(word) || word === 'propos') return false;
+    if (titled || known.has(word)) return true;
+    // Majuscule dans la saisie d'origine (« mails de Martin »).
+    return new RegExp(`\\b${word.charAt(0).toUpperCase()}${word.slice(1)}\\b`).test(rawNorm);
+  };
+  const take = (re: RegExp, explicit: boolean): string | undefined => {
+    const m = s.match(re);
+    if (!m) return undefined;
+    const titled = /\b(dr|docteur|pr|professeur|mme|madame|monsieur|m)\b/.test(m[1] ?? '');
+    const word = m[2];
+    if (!word || !(explicit || isPerson(word, titled))) return undefined;
     s = s.replace(m[0], ' ');
-  }
-  m = s.match(/\b(?:a|pour|destines? a)\s+(?:dr\.?|docteur|pr\.?|professeur|la|le)?\s*([a-z][a-z-]{2,})/);
-  if (m && !QUERY_STOP.has(m[1]) && !MONTHS.includes(m[1]) && !['propos'].includes(m[1])) {
-    q.to = m[1];
-    s = s.replace(m[0], ' ');
-  }
+    return word;
+  };
+
+  q.from =
+    take(new RegExp(`\\b(?:de la part (?:de|du)|venant (?:de|du)|envoyes? par|recus? (?:de|du))\\s+(${TITLE}\\s*)?([a-z][a-z-]{2,})`), true) ??
+    take(new RegExp(`\\b(?:de|du|des)\\s+(${TITLE}\\s*)?([a-z][a-z-]{2,})`), false);
+  q.to = take(new RegExp(`\\b(?:a|pour|destines? a|envoyes? a)\\s+(${TITLE}\\s*)?([a-z][a-z-]{2,})`), false);
+  q.participant = take(new RegExp(`\\b(?:avec|echanges? avec)\\s+(${TITLE}\\s*)?([a-z][a-z-]{2,})`), false);
+  if (!q.from) delete q.from;
+  if (!q.to) delete q.to;
+  if (!q.participant) delete q.participant;
 
   const day = 24 * 3600 * 1000;
   if (/\bcette semaine\b/.test(s)) q.after = new Date(now.getTime() - 7 * day);
@@ -104,6 +142,11 @@ export function parseQuery(raw: string, now: Date = new Date()): SearchQuery {
   }
   q.terms = [...terms];
   return q;
+}
+
+/** Vrai si la requête contient un filtre autre que les mots-clés. */
+export function hasFilters(q: SearchQuery): boolean {
+  return !!(q.from || q.to || q.participant || q.folder || q.after || q.before);
 }
 
 function tokens(s: string): string[] {
@@ -138,6 +181,7 @@ export function searchMessages(messages: DemoMessage[], q: SearchQuery): SearchH
     const toNorm = stripAccents(m.to.map((t) => `${t.displayName} ${t.email}`).join(' ').toLowerCase());
     if (q.from && !fromNorm.includes(q.from)) continue;
     if (q.to && !toNorm.includes(q.to)) continue;
+    if (q.participant && !fromNorm.includes(q.participant) && !toNorm.includes(q.participant)) continue;
     let score = 0;
     for (const t of q.terms) {
       const tf = toks.filter((x) => x === t || (t.length >= 5 && x.startsWith(t))).length;
@@ -145,7 +189,8 @@ export function searchMessages(messages: DemoMessage[], q: SearchQuery): SearchH
       const idf = Math.log(1 + (docs.length - (df.get(t) ?? 0) + 0.5) / ((df.get(t) ?? 0) + 0.5));
       score += (idf * tf * 2.2) / (tf + 1.2 * (0.25 + 0.75 * (toks.length / avg)));
     }
-    if (q.terms.length && score === 0) continue;
+    // Avec un filtre (expéditeur, dossier, période…), les mots-clés servent au classement seulement.
+    if (q.terms.length && score === 0 && !hasFilters(q)) continue;
     hits.push({
       id: m.id,
       folder: m.folder,
@@ -155,6 +200,7 @@ export function searchMessages(messages: DemoMessage[], q: SearchQuery): SearchH
       date: m.date,
       snippet: snippet(m.body, q.terms),
       score: q.terms.length ? score : 1,
+      matched: q.terms.filter((t) => toks.some((x) => x === t || (t.length >= 5 && x.startsWith(t)))),
     });
   }
   return hits.sort((a, b) => b.score - a.score || b.date.localeCompare(a.date));
@@ -163,7 +209,10 @@ export function searchMessages(messages: DemoMessage[], q: SearchQuery): SearchH
 export class DemoSearchProvider implements MailboxSearchProvider {
   readonly id = 'demo';
   readonly label = 'Démonstration (messages fictifs)';
-  constructor(private readonly messages: DemoMessage[]) {}
+  readonly people: Set<string>;
+  constructor(private readonly messages: DemoMessage[]) {
+    this.people = peopleTokens(messages);
+  }
   unavailableReason(): string | null {
     return null;
   }
