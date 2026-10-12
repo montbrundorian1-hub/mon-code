@@ -13,7 +13,7 @@ import { DEMO_MESSAGES } from '../mock/messages';
 import { addHistory } from '../security/sessionMemory';
 import type { AppContext } from '../ui/context';
 import { button, h, replace, toast } from '../ui/dom';
-import { insertBar } from './insertBar';
+import { insertBar, type InsertBarElement } from './insertBar';
 import { validationPanel } from './validationPanel';
 
 type Mode = 'auto' | 'guide' | 'chat';
@@ -26,6 +26,7 @@ export function replyView(ctx: AppContext): HTMLElement {
   let outcome: DraftOutcome | null = null;
   let current = '';
   const chat: ChatMessage[] = [];
+  let bar: InsertBarElement | null = null;
 
   const sourceArea = h('section', { class: 'card' });
   const analysisArea = h('div');
@@ -184,14 +185,17 @@ export function replyView(ctx: AppContext): HTMLElement {
         'Dicter mes intentions',
         async () => {
           if (!ctx.asr.isReady()) return toast('Chargez un modèle de transcription (onglet Modèles), ou saisissez au clavier.', 'error');
-          const s = ctx.voiceCommands.snapshot();
-          if (s.status === 'listening') {
-            const text = await ctx.voiceCommands.stop();
+          const session = ctx.replyDictation;
+          const s = session.snapshot();
+          if (s.status === 'listening' || s.status === 'paused') {
+            dictateBtn.lastChild!.textContent = 'Transcription…';
+            const text = await session.stop();
             intentions.value = [intentions.value, text].filter(Boolean).join(' ');
             dictateBtn.lastChild!.textContent = 'Dicter mes intentions';
           } else {
-            ctx.voiceCommands.reset();
-            if (await ctx.voiceCommands.start()) dictateBtn.lastChild!.textContent = 'Terminer la dictée';
+            session.reset();
+            if (await session.start()) dictateBtn.lastChild!.textContent = 'Terminer la dictée';
+            else toast(session.snapshot().error?.message ?? 'Micro indisponible.', 'error', 7000);
           }
         },
         { icon: 'mic' },
@@ -254,6 +258,8 @@ export function replyView(ctx: AppContext): HTMLElement {
   }
 
   function renderResult(): void {
+    bar?.dispose();
+    bar = null;
     if (!outcome) return replace(resultArea);
     const ta = h('textarea', { class: 'editor result', rows: 10, 'aria-label': 'Réponse (modifiable)' }) as HTMLTextAreaElement;
     ta.value = current;
@@ -269,7 +275,7 @@ export function replyView(ctx: AppContext): HTMLElement {
           current = t;
           renderResult();
         }),
-        insertBar(ctx, () => current, 'reply'),
+        (bar = insertBar(ctx, () => current, 'reply')),
       ),
     );
   }

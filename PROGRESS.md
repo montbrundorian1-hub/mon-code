@@ -1,44 +1,44 @@
 # PROGRESS — Assistant Outlook IA
 
-> Fichier de reprise : il décrit l'état réel du développement pour pouvoir reprendre après une
-> interruption. Mettre à jour à chaque étape importante (et committer).
+> Fichier de reprise : état réel du développement, pour reprendre après une interruption.
+> Mis à jour et commité à chaque étape importante.
 
 ## Emplacement
-- Code : `assistant-outlook-ia/` (Vite + TypeScript, sans framework UI).
-- Branche de travail : `ccr-bb6f57ba-unvym3`.
-
-## Faits vérifiés (sources officielles / tests réels)
-- Exchange on-premises 2016 / 2019 / SE : requirement sets Mailbox **1.1 à 1.5** (doc Microsoft « Outlook API requirement sets », consultée le 2026-10-12).
-- Reconnaissance vocale locale d'Edge (`processLocally`) : Canary/Dev ≥ 150 uniquement, **français non pris en charge** (doc Microsoft Edge consultée le 2026-10-12). → moteur principal = Whisper multilingue via Transformers.js.
-- Test réel Node/CPU (audio synthétique fictif Piper fr_FR, 15 s) :
-  - whisper-tiny q8 : 2,9 s, erreurs graves (« Moxie-Celine », « cette jour »).
-  - whisper-base q8 : 3,9 s, « pendant cette jour » au lieu de « sept jours » (durée de traitement perdue).
-  - whisper-small q8 : 7,1 s, transcription correcte des doses (« 1 g 3 fois par jour pendant 7 jours »).
-- LLM (test réel Node/CPU, dictées fictives) :
-  - Rédaction « libre » : Qwen2.5-0.5B invente un texte sans rapport ; Qwen3-0.6B retire « docteur » ; Apertus-0.5B omet la date et change « décalée » en « prévue » ; Qwen2.5-1.5B invente « comprimés » ; Granite-350M supprime la moitié d'un message.
-  - Stratégie retenue : pipeline CLASSIQUE déterministe par défaut, puis « polissage » IA optionnel d'un texte déjà structuré, contrôlé par une garde de faits (dates, doses, nombres, médicaments, noms) et une mesure de couverture ; toute proposition IA fautive est écartée.
-  - Avec ce prompt de polissage : Qwen2.5-1.5B correct (seul défaut : « une gramme ») ; Qwen3-0.6B change encore le sens ; Granite-350M produit du charabia sur les consignes.
-- Manifests : validés par le validateur officiel Microsoft (`office-addin-manifest validate`) : « The manifest is valid ».
+- Code : `assistant-outlook-ia/` (Vite 8 + TypeScript 5.9, sans framework UI ; Transformers.js 4.3.1).
+- Branche de travail : `ccr-bb6f57ba-unvym3` (poussée sur `origin`).
+- CI / déploiement : `.github/workflows/assistant-outlook-ia.yml` (tests + build ; Pages sur `main` si activé).
 
 ## Étapes
-- [x] Étape 1 — Diagnostic des contraintes, choix d'architecture.
-- [x] Étape 2 — Initialisation du dépôt (package.json, tsconfig, .gitignore, modules sécurité).
-- [x] Étape 3 — Première version exécutable : panneau 4 onglets + Modèles/Diagnostic/Aide, mode démo, adaptateur Office.js, manifests. `npm run build` OK, `tsc` OK.
-- [~] Étape 4 — Transcription vocale locale : code écrit (worker Whisper, micro, segmentation, session de dictée) ; test navigateur réel à faire.
-- [~] Étape 5 — Reformulation : mode classique + IA locale + garde de faits écrits ; tests unitaires à écrire.
-- [ ] Étape 6 — Tests automatisés + test navigateur réel (Chromium headless, micro simulé).
-- [ ] Étape 7 — Documentation et livraison.
+- [x] 1 — Diagnostic des contraintes, architecture (docs/ARCHITECTURE.md).
+- [x] 2 — Initialisation du dépôt.
+- [x] 3 — Version exécutable : panneau (Dicter, Rédiger, Répondre, Rechercher, Modèles, Diagnostic, Aide), mode démo, adaptateur Office.js, manifests validés par Microsoft.
+- [x] 4 — Transcription locale Whisper (worker, micro AudioWorklet, segmentation, pause/reprise, fenêtre séparée). **Testée dans Chromium** avec micro simulé.
+- [x] 5 — Rédaction : mode classique + IA locale optionnelle avec garde de faits/sens. Testée dans Chromium (Qwen3-0.6B).
+- [x] 6 — Tests : 108 tests Vitest OK ; test navigateur de bout en bout (`npm run e2e`).
+- [x] 7 — Documentation : README, ARCHITECTURE, COMPATIBILITY, SECURITY, DEPLOYMENT, USER_TESTS, ROADMAP, EXCHANGE_SEARCH_FEASIBILITY.
+
+## Faits vérifiés
+- Exchange on-prem 2016/2019/SE : Mailbox 1.1–1.5 (doc Microsoft, 2026-10-12).
+- Body.setSelectedDataAsync / prependAsync / getTypeAsync : Mailbox 1.1 ; getAsync/setAsync : 1.3 ; displayReplyForm : 1.1.
+- makeEwsRequestAsync : exige ReadWriteMailbox + OAuthAuthentication sur le répertoire EWS (admin).
+- Reconnaissance vocale locale Edge : pas de français (Canary/Dev ≥ 150) → Whisper retenu.
+- `office-addin-manifest validate` : manifest.xml et manifest.dev.xml valides.
+- Chromium (WASM, 1 thread) : whisper-small chargé en ~45 s, transcription exacte de la dictée fictive (~2,5× la durée de parole). Qwen3-0.6B : chargé en ~40 s, ~60 s par mail ; a transformé une question en affirmation → garde de sens ajoutée (questions, négations).
+- Requêtes externes observées : appsforoffice.microsoft.com, huggingface.co, us.aws.cdn.hf.co — GET uniquement. Télémétrie Office.js bloquée par la CSP.
+- Le dépôt GitHub est **privé** → GitHub Pages gratuit impossible tant qu'il n'est pas public (alternatives : dépôt public dédié, Netlify Drop, serveur interne ; Cloudflare Pages exclu : fichier WASM > 25 Mio).
+
+## Reste à faire (nécessite l'utilisateur)
+1. Choisir l'hébergement (DEPLOYMENT.md §2), déployer, régénérer le manifest avec l'URL finale.
+2. Tests dans le webmail réel avec données fictives (USER_TESTS.md §5–§11) : surfaces lecture/rédaction, jeux d'API, **micro dans le panneau**, accès huggingface.co depuis le CHU, insertion.
+3. Selon résultats : ajuster (fenêtre séparée, auto-hébergement des modèles, seuils de segmentation).
 
 ## Reprise
 ```bash
 cd assistant-outlook-ia
 npm install          # .npmrc désactive le téléchargement CUDA d'onnxruntime-node
-npm test
-npm run dev          # http://localhost:3000 (mode démonstration hors Outlook)
-npm run manifest -- https://votre-site/chemin/   # régénère manifest.xml et manifest.dev.xml
+npm test             # 108 tests
+npm run build
+npm run e2e -- --asr whisper-small          # test navigateur réel (télécharge ~250 Mo)
+npm run dev          # http://localhost:3000 (mode démonstration)
+npm run manifest -- https://votre-site/chemin/
 ```
-
-## Prochaines actions
-1. Tests unitaires (30 cas exigés) — `tests/`.
-2. Test navigateur réel (Chromium + micro simulé à partir d'un WAV fictif) — `scripts/e2e-browser.mjs`.
-3. Documentation (`docs/`), README, workflow GitHub Pages.

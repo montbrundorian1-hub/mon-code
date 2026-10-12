@@ -7,8 +7,11 @@ import { addHistory } from '../security/sessionMemory';
 import type { AppContext } from '../ui/context';
 import { button, copyText, h, replace, toast } from '../ui/dom';
 
-export function insertBar(ctx: AppContext, getText: () => string, kind: 'draft' | 'reply' = 'draft'): HTMLElement {
-  const root = h('div', { class: 'insert-bar' });
+export type InsertBarElement = HTMLElement & { dispose(): void };
+
+/** La vue qui crée la barre doit appeler dispose() avant de la remplacer (désabonnement). */
+export function insertBar(ctx: AppContext, getText: () => string, kind: 'draft' | 'reply' = 'draft'): InsertBarElement {
+  const root = Object.assign(h('div', { class: 'insert-bar' }), { dispose: () => undefined }) as InsertBarElement;
   const feedback = h('div', { 'aria-live': 'polite' });
   const position = h('select', { 'aria-label': 'Position d’insertion' }, h('option', { value: 'cursor' }, 'au curseur'), h('option', { value: 'start' }, 'en tête du message')) as HTMLSelectElement;
 
@@ -61,6 +64,6 @@ export function insertBar(ctx: AppContext, getText: () => string, kind: 'draft' 
   };
 
   render();
-  ctx.on('host', render);
+  root.dispose = ctx.on('host', render) as () => void;
   return root;
 }

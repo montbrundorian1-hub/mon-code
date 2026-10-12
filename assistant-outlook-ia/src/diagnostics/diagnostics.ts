@@ -13,6 +13,12 @@ import { getBlockedCount, summarizeGuard } from '../security/networkGuard';
 import { nativeLocalSpeechStatus } from '../transcription/engines';
 import type { BootResult } from '../outlook/bootstrap';
 
+/** Hôtes bloqués par la CSP depuis le démarrage (noms d'hôte uniquement). */
+const cspBlocked = new Set<string>();
+export function recordCspViolation(host: string): void {
+  if (host) cspBlocked.add(host.slice(0, 80));
+}
+
 export type CheckStatus = 'ok' | 'warn' | 'fail' | 'info' | 'unknown';
 
 export interface Check {
@@ -239,6 +245,16 @@ export async function runDiagnostics(boot: BootResult): Promise<Check[]> {
     status: blocked ? 'warn' : 'ok',
     value: String(blocked),
     detail: summarizeGuard().map((s) => `${s.host} : ${s.allowed} autorisée(s), ${s.blocked} bloquée(s)`).join(' ; ') || 'aucune requête externe',
+  });
+  checks.push({
+    id: 'csp',
+    group: 'Sécurité',
+    label: 'Ressources bloquées par la CSP',
+    status: cspBlocked.size ? 'info' : 'ok',
+    value: cspBlocked.size ? [...cspBlocked].join(', ') : 'aucune',
+    detail: cspBlocked.size
+      ? 'Normal pour la télémétrie d’Office.js. Si Outlook ne détecte pas le panneau, transmettre cette liste (docs/COMPATIBILITY.md).'
+      : undefined,
   });
   checks.push({ id: 'version', group: 'Sécurité', label: 'Version de l’application', status: 'info', value: APP_VERSION });
   return checks;

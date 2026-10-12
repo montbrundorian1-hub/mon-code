@@ -9,7 +9,7 @@ import { addHistory } from '../security/sessionMemory';
 import type { AppContext } from '../ui/context';
 import { button, h, icon, replace, toast } from '../ui/dom';
 import { DemoMailHost } from '../mock/demoHost';
-import { insertBar } from './insertBar';
+import { insertBar, type InsertBarElement } from './insertBar';
 import { diffView, validationPanel } from './validationPanel';
 
 export function composeView(ctx: AppContext): HTMLElement {
@@ -29,6 +29,7 @@ export function composeView(ctx: AppContext): HTMLElement {
   const resultArea = h('div');
   const busy = h('div', { class: 'busy', hidden: true }, h('span', { class: 'spinner' }), h('span', { class: 'busy-text' }, 'Rédaction…'), h('pre', { class: 'stream' }));
   let tab: 'redige' | 'original' | 'diff' = 'redige';
+  let bar: InsertBarElement | null = null;
 
   const refreshAiLabel = () => {
     const ready = ctx.llm.isReady();
@@ -129,7 +130,7 @@ export function composeView(ctx: AppContext): HTMLElement {
   ctx.voiceCommands.onChange((s) => {
     const active = s.status === 'listening';
     voiceBtn.classList.toggle('btn-danger', active);
-    voiceBtn.lastChild!.textContent = active ? ' Arrêter la conversation' : ' Conversation vocale';
+    voiceBtn.lastChild!.textContent = active ? ' Arrêter la conversation' : s.status === 'paused' ? ' Reprendre la conversation' : ' Conversation vocale';
     const finals = s.segments.filter((x) => x.status === 'final');
     while (lastSegCount < finals.length) {
       const said = finals[lastSegCount++].text.trim();
@@ -142,7 +143,9 @@ export function composeView(ctx: AppContext): HTMLElement {
   });
   voiceBtn.addEventListener('click', async () => {
     if (!ctx.asr.isReady()) return toast('Chargez d’abord un modèle de transcription (onglet Modèles).', 'error');
-    if (ctx.voiceCommands.snapshot().status === 'listening') await ctx.voiceCommands.stop();
+    const st = ctx.voiceCommands.snapshot().status;
+    if (st === 'listening') await ctx.voiceCommands.stop();
+    else if (st === 'paused') await ctx.voiceCommands.resume();
     else {
       ctx.voiceCommands.reset();
       lastSegCount = 0;
@@ -153,6 +156,8 @@ export function composeView(ctx: AppContext): HTMLElement {
   const quick = (label: string, cmd: string) => button(label, () => void runCommand(cmd), { kind: 'ghost' });
 
   function renderResult(): void {
+    bar?.dispose();
+    bar = null;
     const outcome = ctx.draft.outcome;
     if (!outcome) {
       replace(resultArea);
@@ -224,7 +229,7 @@ export function composeView(ctx: AppContext): HTMLElement {
           renderResult();
         }),
       ),
-      h('section', { class: 'card' }, insertBar(ctx, () => ctx.draft.current, 'draft'), demoPreview),
+      h('section', { class: 'card' }, (bar = insertBar(ctx, () => ctx.draft.current, 'draft')), demoPreview),
     );
   }
 

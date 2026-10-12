@@ -12,6 +12,7 @@ import { installSessionCleanup } from './security/sessionMemory';
 import { bootstrapHost } from './outlook/bootstrap';
 import { AppContext } from './ui/context';
 import { mountApp } from './ui/app';
+import { recordCspViolation } from './diagnostics/diagnostics';
 
 installNetworkGuard({
   selfOrigin: location.origin,
@@ -28,11 +29,14 @@ window.addEventListener('unhandledrejection', (e) => {
 
 // Journal des violations CSP : seul l'hôte bloqué est retenu (diagnostic).
 document.addEventListener('securitypolicyviolation', (e) => {
+  let host = e.blockedURI.slice(0, 20);
   try {
-    console.warn(`[CSP] ressource bloquée : ${new URL(e.blockedURI).host || e.blockedURI.slice(0, 20)}`);
+    host = new URL(e.blockedURI).host || host;
   } catch {
-    console.warn('[CSP] ressource bloquée');
+    /* « inline », « eval »… */
   }
+  recordCspViolation(`${host} (${e.effectiveDirective})`);
+  console.warn(`[CSP] ressource bloquée : ${host}`);
 });
 
 async function start(): Promise<void> {

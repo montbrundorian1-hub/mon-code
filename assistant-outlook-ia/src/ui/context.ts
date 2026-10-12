@@ -34,6 +34,8 @@ export class AppContext {
   readonly dictation: DictationSession;
   /** Session dédiée aux commandes vocales / conversation (même moteur, micro exclusif). */
   readonly voiceCommands: DictationSession;
+  /** Session dédiée à la dictée des intentions de réponse (onglet Répondre). */
+  readonly replyDictation: DictationSession;
   caps: (Capabilities & { gpuInfo: string | null }) | null = null;
   draft: DraftState = { source: '', outcome: null, current: '', versions: [], formality: 'auto', useAi: false };
   recipients: Recipient[] = [];
@@ -50,17 +52,24 @@ export class AppContext {
     this.assistant = new Assistant(new LocalLlmProvider(this.llm));
     this.dictation = new DictationSession({ engine: this.whisper });
     this.voiceCommands = new DictationSession({ engine: this.whisper });
+    this.replyDictation = new DictationSession({ engine: this.whisper });
     this.asr.onChange(() => this.emit('models'));
     this.llm.onChange(() => this.emit('models'));
-    // Exclusivité du micro : démarrer l'une arrête l'autre.
-    this.dictation.onChange((s) => {
-      if (s.status === 'listening' && this.voiceCommands.snapshot().status === 'listening') void this.voiceCommands.stop();
-      this.emit('mic');
-    });
-    this.voiceCommands.onChange((s) => {
-      if (s.status === 'listening' && this.dictation.snapshot().status === 'listening') void this.dictation.pause();
-      this.emit('mic');
-    });
+    // Exclusivité du micro : une seule session peut écouter à la fois.
+    for (const session of this.sessions()) {
+      session.onChange((s) => {
+        if (s.status === 'listening') {
+          for (const other of this.sessions()) {
+            if (other !== session && other.snapshot().status === 'listening') void other.pause();
+          }
+        }
+        this.emit('mic');
+      });
+    }
+  }
+
+  sessions(): DictationSession[] {
+    return [this.dictation, this.voiceCommands, this.replyDictation];
   }
 
   get host(): MailHost {
@@ -68,13 +77,12 @@ export class AppContext {
   }
 
   micActive(): boolean {
-    return this.dictation.snapshot().status === 'listening' || this.voiceCommands.snapshot().status === 'listening';
+    return this.sessions().some((s) => s.snapshot().status === 'listening');
   }
 
-  /** Arrêt d'urgence de toute capture audio. */
+  /** Arrêt d'urgence de toute capture audio (le texte déjà transcrit est conservé). */
   stopAllMic(): void {
-    if (this.dictation.snapshot().status === 'listening') void this.dictation.pause();
-    if (this.voiceCommands.snapshot().status === 'listening') void this.voiceCommands.stop();
+    for (const s of this.sessions()) if (s.snapshot().status === 'listening') void s.pause();
   }
 
   on(event: 'models' | 'mic' | 'draft' | 'host', fn: () => void): () => void {
@@ -119,8 +127,7 @@ export class AppContext {
   }
 
   dispose(): void {
-    this.dictation.dispose();
-    this.voiceCommands.dispose();
+    for (const s of this.sessions()) s.dispose();
     this.asr.terminate();
     this.llm.terminate();
     this.draft = { source: '', outcome: null, current: '', versions: [], formality: 'auto', useAi: false };
