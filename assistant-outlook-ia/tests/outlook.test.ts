@@ -206,3 +206,15 @@ describe('Aucun envoi automatique (cas 25)', () => {
     }
   });
 });
+
+describe('Salutation : nom de l’utilisateur lu localement (audit n°2)', () => {
+  afterEach(() => removeOfficeMock());
+
+  it('userProfile.displayName (Mailbox 1.1) si présent, sinon null', () => {
+    installOfficeMock({ mode: 'compose', maxMailbox: '1.5', userName: 'MARTIN Camille' });
+    expect(new OfficeMailHost().userDisplayName()).toBe('MARTIN Camille');
+    removeOfficeMock();
+    installOfficeMock({ mode: 'read', maxMailbox: '1.5' });
+    expect(new OfficeMailHost().userDisplayName()).toBeNull();
+  });
+});

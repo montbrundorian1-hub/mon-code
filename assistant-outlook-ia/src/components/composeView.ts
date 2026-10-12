@@ -479,13 +479,14 @@ export function composeView(ctx: AppContext): HTMLElement {
   function renderThread(): void {
     bar?.dispose();
     bar = null;
+    // L'indicateur de calcul reste dans le fil (masqué au repos) : son état est toujours observable.
     if (!ctx.draft.source && !isBusy) {
-      replace(thread, welcome());
+      replace(thread, welcome(), busy);
       return;
     }
     const items: Node[] = [userBubble(ctx.draft.source, !isBusy)];
     for (const e of log) items.push(e.role === 'user' ? userBubble(e.text, false, e.voice) : assistantNote(e));
-    if (isBusy) items.push(busy);
+    items.push(busy);
     if (ctx.draft.outcome) items.push(draftMessage());
     replace(thread, ...items);
   }

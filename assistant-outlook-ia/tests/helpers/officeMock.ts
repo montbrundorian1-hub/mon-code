@@ -12,6 +12,8 @@ export interface OfficeMockOptions {
   withSetSelected?: boolean;
   withPrepend?: boolean;
   body?: string;
+  /** Nom d'affichage de l'utilisateur (userProfile, Mailbox 1.1). */
+  userName?: string;
 }
 
 const ORDER = ['1.1', '1.2', '1.3', '1.4', '1.5', '1.6', '1.7', '1.8', '1.9', '1.10', '1.11', '1.12', '1.13', '1.14', '1.15'];
@@ -82,7 +84,7 @@ export function installOfficeMock(o: OfficeMockOptions) {
       requirements: {
         isSetSupported: (name: string, v: string) => name === 'Mailbox' && ORDER.indexOf(v) >= 0 && ORDER.indexOf(v) <= maxIdx,
       },
-      mailbox: { item, addHandlerAsync: vi.fn() },
+      mailbox: { item, addHandlerAsync: vi.fn(), userProfile: o.userName ? { displayName: o.userName } : undefined },
       ui: {},
     },
   };

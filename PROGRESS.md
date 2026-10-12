@@ -35,12 +35,13 @@
     CSP et liste blanche mises à jour ; (b) robots.txt (Disallow) + meta robots/description/color-scheme ;
     (d) tests de robustesse (tests/robustness.test.ts : plantage, délai, interruption, chargements concurrents, double clic micro,
     pause pendant l'autorisation) + tests de démarrage. 134 tests, tsc OK.
-  - RESTE : (c) ESLint à 0 (script `npm run lint`) ; réglage « ponctuation dictée » transmis par l'interface ; diagnostic (domaine
-    Office.js, état détaillé de la reconnaissance native) ;
-    (e) REFONTE UI (styles.css nouveau design system, icônes contour, en-tête verre, navigation segmentée, accueil, orbe de dictée,
-    fil de discussion + zone de saisie façon ChatGPT avec bouton Arrêter, recherche avec surlignage, Modèles en langage clair,
-    Diagnostic avec synthèse, annonces lecteur d'écran, Ctrl+Entrée) ; (f) mise à jour tests UI/e2e/audit ; (g) mesures « après »
-    + docs/AUDIT.md v2 + docs/DESIGN.md + README.
+  - FAIT (commits 4c73749, e570e6a et suivant) : (c) ESLint à 0 (`npm run lint`) ; réglage « ponctuation dictée » transmis ;
+    diagnostic (source d'Office.js, ouverture par Outlook, reconnaissance native informative) ; (e) REFONTE UI complète
+    (src/styles.css, src/ui/icons.ts, composer, segmented, avatar, greeting ; toutes les vues réécrites) ;
+    tests : tests/ui.test.ts, tests/experience.test.ts (159 → 160 tests) ; (f) e2e mis à jour : **20/20 en Chromium réel**
+    (whisper-small chargé en 26 s, transcription exacte) ; audit-ui : axe 0, débordements 0.
+  - RESTE : (g) mesures « après » (Lighthouse, couverture, contraste élevé, 320 px) + docs/AUDIT.md v2 + docs/DESIGN.md
+    + README/SECURITY/COMPATIBILITY/DEPLOYMENT/ROADMAP/USER_TESTS à jour.
 
 ## Faits vérifiés
 - Exchange on-prem 2016/2019/SE : Mailbox 1.1–1.5 (doc Microsoft, 2026-10-12).
@@ -61,7 +62,8 @@
 ```bash
 cd assistant-outlook-ia
 npm install          # .npmrc désactive le téléchargement CUDA d'onnxruntime-node
-npm test             # 134 tests
+npm test             # 160 tests
+npm run lint         # ESLint (règles typées) : 0 erreur
 node scripts/audit-ui.mjs   # audit d'interface (après npm run build)
 npm run build
 npm run e2e -- --asr whisper-small          # test navigateur réel (télécharge ~250 Mo)
