@@ -68,38 +68,40 @@ Onglet **Dicter** → bouton **« Ouvrir la dictée dans une fenêtre séparée 
 
 ## 8. Sélectionner et charger un modèle local
 
-Onglet **Modèles** (roue dentée) :
-1. Lire le **profil du poste** (carte graphique / processeur).
-2. Section *Transcription vocale locale* : le modèle **recommandé** est présélectionné, avec sa **taille**.
-3. Cocher la case de consentement (le bouton reste grisé sans elle), puis **« Télécharger et charger »**.
-4. Attendu : barre de progression en Mo, bouton **Annuler** ; puis « Prêt : Whisper … ».
+Onglet **Dicter** (ou **Modèles**, icône à curseurs en haut à droite) :
+1. Carte *Dictée vocale* : le modèle **recommandé** est présélectionné, avec sa **taille** (les autres sont sous « Autres modèles »).
+2. Cocher la case de consentement (le bouton reste grisé sans elle), puis **« Télécharger et activer »**.
+3. Attendu : barre de progression (« … Mo sur … Mo »), bouton **Annuler** ; puis l'orbe de dictée devient colorée.
+4. Dans **Modèles → Détails techniques du poste** : profil (carte graphique / processeur), mémoire, cœurs.
    - Durées mesurées en test (PC 4 cœurs, sans GPU) : whisper-base 38 s, whisper-small 45 s (téléchargement inclus, connexion rapide).
 5. Sur un poste du CHU : si le téléchargement échoue (« le réseau bloque peut-être huggingface.co »), notez-le ; essayez le modèle plus léger proposé.
 6. Facultatif : *Rédaction par IA locale (expérimental)* — **seulement sur votre PC personnel** et si la taille annoncée vous convient (500 Mo à 1,8 Go).
 
 ## 9. Dicter un mail fictif
 
-Onglet **Dicter** → gros bouton micro → lire à voix haute, en marquant de courtes pauses :
+Onglet **Dicter** → toucher l'**orbe** colorée (gros bouton rond) → lire à voix haute, en marquant de courtes pauses :
 
 > « Bonjour docteur Martin, je vous écris au sujet de madame Exemple, vue en consultation le douze mars. *(pause)* Nous avons débuté le paracétamol à un gramme toutes les six heures pendant cinq jours. Pouvez-vous la revoir dans deux semaines ? Merci d'avance. »
 
 Vérifier :
-- bandeau rouge **« Micro actif »** en haut + chronomètre ;
-- le texte apparaît **après chaque pause** (transcription par segments) ; mention « transcription en cours » pendant le calcul ;
-- **Pause** : le bandeau rouge disparaît (micro libéré) ; **Reprendre** ; **Arrêter** ;
+- bandeau rouge **« Micro actif »** en haut (avec chronomètre et bouton « Arrêter le micro »), orbe animée, « Je vous écoute… » ;
+- le texte apparaît **après chaque pause** (transcription par segments) ; mention « transcription… » pendant le calcul ;
+- **Pause** : le bandeau rouge disparaît (micro libéré) ; **Reprendre** ; **Terminer** ;
 - **Échap** arrête immédiatement le micro ;
 - raccourci **Ctrl+Maj+Espace** (panneau actif) démarre/arrête la dictée.
 
 ## 10. Comparer la transcription et la rédaction
 
-Après **Arrêter** : corriger éventuellement le texte, puis **« Générer le mail »**. Dans l'onglet **Rédiger** :
+Après **Terminer** : corriger éventuellement le texte (« Votre dictée »), puis **« Rédiger le mail »**. L'onglet **Rédiger**
+présente une conversation : votre texte à droite, la proposition de l'assistant en dessous.
 - *Version rédigée* : formule d'appel, paragraphes, formule de politesse ;
 - *Original* : votre dictée intacte ;
 - *Différences* : ajouts en vert, suppressions en rouge barré ;
-- encadré **« À vérifier »** : chaque date/dose/nombre/médicament perdu ou ajouté, chaque correction automatique.
-- Essayer : **Plus court**, **Plus formel**, **En liste**, **Annuler**, et une consigne écrite « ajoute : merci de me rappeler ».
+- encadré vert (« Dates, doses… retrouvés ») ou orange (**« N points à vérifier »**) : chaque date/dose/nombre/médicament perdu ou ajouté, chaque correction automatique. Il est **recalculé** après chaque modification.
+- Essayer : **Plus court**, **Plus formel**, **En liste**, l'icône **Annuler** (flèche retour), puis écrire dans la zone de saisie en bas « ajoute : merci de me rappeler » et appuyer sur **Entrée**.
+- Avec l'IA locale chargée (bouton **IA** de la zone de saisie) : pendant la génération, le bouton rond devient **Arrêter** ; l'arrêt conserve la version sans IA.
 
-Test de la garde de faits : dans la version rédigée, remplacez « 1 g » par « 2 g », puis faites **Relancer** depuis un original contenant « 1 g » avec l'IA locale : une proposition IA qui change la dose doit être **écartée**.
+Test de la garde de faits : depuis un texte contenant « 1 g », activez **IA** puis l'icône **Régénérer** : une proposition IA qui change la dose doit être **écartée** (encadré « Proposition de l'IA écartée par sécurité »).
 
 ## 11. Tester l'insertion dans un brouillon de test
 
@@ -118,7 +120,7 @@ Dans un **nouveau brouillon de test** (aucun destinataire réel, ou vous-même) 
 | « Accès au micro refusé » | Permission Edge refusée | Icône cadenas de la barre d'adresse → Micro → Autoriser, ou fenêtre séparée |
 | « bloqué par le cadre Outlook » | OWA n'autorise pas le micro dans le panneau | Fenêtre séparée (§7b) |
 | « Aucun microphone détecté » | Pas de périphérique | Brancher un micro |
-| « Mémoire insuffisante » | Modèle trop lourd | Bouton « Essayer un modèle plus léger » |
+| « Mémoire insuffisante » / « le moteur de calcul s'est arrêté » | Modèle trop lourd | Bouton « Essayer plus léger : … » |
 | « Téléchargement impossible » | Réseau / proxy | Autre réseau, ou modèles auto-hébergés |
 | « Insertion impossible » | Outlook a refusé | Bouton « Copier le texte » puis Ctrl+V |
 | « Proposition de l'IA écartée » | La garde de faits a détecté un écart | Normal : relire, garder la version classique |
@@ -130,7 +132,7 @@ Onglet Diagnostic → **« Copier le rapport technique »**. Il contient uniquem
 ## 14. Désinstaller le complément
 
 OWA → *Paramètres → Gérer les compléments → Mes compléments* → « Assistant Outlook IA » → **Supprimer**.
-Puis, si vous avez activé le cache des modèles : avant de désinstaller, onglet Modèles → **« Vider le cache des modèles »** (ou Edge → Paramètres → Cookies et données de site → supprimer les données du site).
+Puis, si vous avez activé le cache des modèles : avant de désinstaller, onglet Modèles → Préférences → **« Vider le cache »** (ou Edge → Paramètres → Cookies et données de site → supprimer les données du site).
 
 ## 15. Annuler / revenir à la version précédente
 

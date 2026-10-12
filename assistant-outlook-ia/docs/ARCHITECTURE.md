@@ -26,19 +26,20 @@ Outlook Web App (Exchange on-premises)                         Navigateur Edge d
 
 | Dossier | Rôle |
 |---|---|
-| `src/outlook/` | `MailHost` (interface), `OfficeMailHost` (Office.js réel), `bootstrap.ts` (Office.onReady → réel ou démo), `html.ts` (texte → HTML échappé). |
+| `src/outlook/` | `MailHost` (interface), `OfficeMailHost` (Office.js réel, typé), `bootstrap.ts` (détection de l'ouverture par Outlook : cadre ou `_host_Info` ; `Office.onReady` borné à 10 s → réel, sinon démonstration immédiate), `html.ts` (texte → HTML échappé). |
 | `src/mock/` | `DemoMailHost` (Outlook simulé) et messages **fictifs** (`exemple.test`). |
 | `src/audio/` | `MicCapture` (getUserMedia → AudioWorklet → PCM 16 kHz), `SpeechSegmenter` (détection d'activité vocale à seuil adaptatif). |
 | `src/transcription/` | `whisper.worker.ts` (Transformers.js), `WhisperEngine`, `DictationSession` (segments validés / provisoires / en attente, pause qui libère le micro). |
-| `src/ai/` | `classic.ts` (règles), `commands.ts` (consignes), `factGuard.ts` (garde de faits), `coverage.ts`, `assistant.ts` (orchestrateur + interface `TextGenerationProvider`), `llm.worker.ts`, `models.ts` (catalogue et recommandation), `modelLoader.ts` (consentement, progression, annulation), `prompts.ts`. |
+| `src/ai/` | `classic.ts` (règles), `commands.ts` (consignes), `factGuard.ts` (garde de faits), `coverage.ts`, `assistant.ts` (orchestrateur + interface `TextGenerationProvider`, arrêt de génération), `llm.worker.ts`, `models.ts` (catalogue, révisions figées, recommandation), `modelLoader.ts` (`ModelHandle` : consentement, progression, annulation, délais, plantage du worker → requêtes rejetées), `workerProtocol.ts` (messages typés page ↔ workers), `workerEnv.ts`, `prompts.ts`. |
 | `src/search/` | `MailboxSearchProvider`, `DemoSearchProvider` (fictif), `ExchangeSearchProvider` (désactivé). |
 | `src/security/` | `networkGuard.ts`, `settings.ts` (préférences non sensibles uniquement), `sessionMemory.ts` (historique en mémoire), `redact.ts`. |
 | `src/diagnostics/` | Diagnostic non intrusif (Office, micro, WASM/WebGPU, sécurité). |
-| `src/components/`, `src/ui/` | Interface (TypeScript sans framework, ~125 Ko de JS). |
+| `src/ui/` | Coquille (`app.ts` : en-tête, navigation, raccourcis), état partagé (`context.ts`), utilitaires DOM sans `innerHTML` (`dom.ts` : boutons, interrupteurs, notifications, annonces pour lecteurs d'écran), icônes (`icons.ts`, Lucide ISC), accueil (`greeting.ts`). |
+| `src/components/` | Vues (Dicter, Rédiger, Répondre, Rechercher, Modèles, Diagnostic, Aide) et briques : `composer.ts` (zone de saisie façon messagerie), `segmented.ts`, `modelPanel.ts`, `insertBar.ts`, `validationPanel.ts`, `avatar.ts`, `dictationWindow.ts`. Système de design : `src/styles.css` ([DESIGN.md](DESIGN.md)). ~160 Ko de JS, 40 Ko de CSS (57 + 9 Ko compressés). |
 
 ## Pipeline de dictée
 
-1. Clic sur le micro (ou raccourci quand le panneau a le focus) → `getUserMedia` → `AudioContext` à 16 kHz → `AudioWorklet` (blocs de 100 ms).
+1. Clic sur l’orbe micro (ou raccourci quand le panneau a le focus ; Échap coupe le micro) → `getUserMedia` → `AudioContext` à 16 kHz → `AudioWorklet` (blocs de 100 ms).
 2. `SpeechSegmenter` : seuil d'énergie adaptatif ; un segment se clôt après 0,8 s de silence ou 20 s de parole.
 3. Chaque segment est **transféré** au worker Whisper (`language: french`, `task: transcribe`), puis libéré.
 4. Si le facteur temps réel mesuré est < 0,35 (poste rapide / WebGPU), des transcriptions **provisoires** du segment en cours sont affichées (en italique, marquées « provisoire »).

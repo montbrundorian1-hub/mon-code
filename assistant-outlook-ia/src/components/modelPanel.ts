@@ -214,7 +214,11 @@ function errorView(
     kind === 'memory'
       ? 'Mémoire insuffisante : ce modèle est trop lourd pour ce poste.'
       : kind === 'network'
-        ? 'Téléchargement impossible : le réseau (proxy ou filtrage de l’établissement) bloque peut-être huggingface.co.'
+        ? /trop de demandes/.test(message)
+          ? 'huggingface.co limite temporairement les téléchargements (trop de demandes). Réessayez dans quelques minutes.'
+          : /momentanément indisponible/.test(message)
+            ? 'Le serveur des modèles est momentanément indisponible. Réessayez plus tard.'
+            : 'Téléchargement impossible : le réseau (proxy ou filtrage de l’établissement) bloque peut-être huggingface.co.'
         : kind === 'crash'
           ? 'Le moteur de calcul s’est arrêté de façon inattendue (souvent par manque de mémoire).'
           : 'Le modèle n’a pas pu être chargé.';

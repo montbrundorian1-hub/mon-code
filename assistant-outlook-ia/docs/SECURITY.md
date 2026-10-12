@@ -23,10 +23,15 @@
 | Domaine | Pourquoi | Données envoyées |
 |---|---|---|
 | Site d'hébergement (ex. `*.github.io`) | Code de l'application | Requête GET standard (adresse IP, user-agent, comme toute page web). |
-| `appsforoffice.microsoft.com` | Office.js (obligatoire pour un complément) | GET de scripts. |
+| `officeapis.public.onecdn.static.microsoft` | Office.js — CDN officiel **actuel** de Microsoft (obligatoire pour un complément ; même adresse que le « Hello world » validé au CHU) | GET de scripts. |
+| `appsforoffice.microsoft.com` | Ancien CDN officiel d'Office.js, autorisé au cas où Office.js y chargerait encore des ressources | GET de scripts (non contacté lors du test du 2026-10-12, refonte). |
 | `huggingface.co`, `*.huggingface.co`, `*.hf.co` | Poids des modèles (après consentement) | GET de fichiers publics. Option : auto-hébergement dans `models/` pour supprimer ce domaine. |
 
-Aucun autre domaine n'est autorisé (CSP + garde réseau). Le test navigateur du 2026-10-12 a constaté : `appsforoffice.microsoft.com`, `huggingface.co`, `us.aws.cdn.hf.co`, toutes en GET sans corps.
+Aucun autre domaine n'est autorisé (CSP + garde réseau). Le test navigateur du 2026-10-12 (après refonte) a constaté : `officeapis.public.onecdn.static.microsoft`, `huggingface.co`, `us.aws.cdn.hf.co`, toutes en GET sans corps.
+
+**Intégrité des modèles** : chaque modèle est téléchargé à une **révision figée** (empreinte de commit Hugging Face, `src/ai/models.ts`). Une modification ultérieure du dépôt d'origine ne change donc pas les fichiers reçus : ce sont exactement ceux qui ont été évalués.
+
+**Nom de l'utilisateur** : pour saluer l'utilisateur (« Bonjour Camille »), le panneau lit `userProfile.displayName` (Mailbox 1.1) **localement**. Ce nom n'est ni stocké, ni journalisé, ni transmis.
 
 **Hébergement tiers** : l'hébergeur (GitHub) voit les requêtes de chargement du site (IP, date). Il ne voit **aucun** contenu de mail ou de dictée, qui ne quitte pas le navigateur. Si l'établissement l'exige, le site statique peut être hébergé sur un serveur interne (voir DEPLOYMENT.md).
 
@@ -35,12 +40,17 @@ Aucun autre domaine n'est autorisé (CSP + garde réseau). Le test navigateur du
 Déclarée dans `index.html` (balise meta, faute d'en-têtes sur un hébergement statique gratuit) :
 
 ```
-default-src 'self'; script-src 'self' https://appsforoffice.microsoft.com 'wasm-unsafe-eval';
-connect-src 'self' https://appsforoffice.microsoft.com https://huggingface.co https://*.huggingface.co https://*.hf.co;
+default-src 'self';
+script-src 'self' https://officeapis.public.onecdn.static.microsoft https://appsforoffice.microsoft.com 'wasm-unsafe-eval';
+connect-src 'self' https://officeapis.public.onecdn.static.microsoft https://appsforoffice.microsoft.com
+            https://huggingface.co https://*.huggingface.co https://*.hf.co;
 worker-src 'self' blob:; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self';
-media-src 'self' blob:; frame-src 'self' https://appsforoffice.microsoft.com; object-src 'none';
-base-uri 'self'; form-action 'none'
+media-src 'self' blob:;
+frame-src 'self' https://officeapis.public.onecdn.static.microsoft https://appsforoffice.microsoft.com;
+object-src 'none'; base-uri 'self'; form-action 'none'
 ```
+
+S'y ajoutent `<meta name="robots" content="noindex, nofollow">` et `public/robots.txt` (`Disallow: /`) : le complément n'a pas vocation à être indexé par les moteurs de recherche.
 
 - `'wasm-unsafe-eval'` : requis par ONNX Runtime Web (compilation WebAssembly), n'autorise pas `eval` JavaScript.
 - `style-src 'unsafe-inline'` : styles dynamiques (barres de progression). Aucun script inline.
@@ -60,9 +70,11 @@ base-uri 'self'; form-action 'none'
 | @huggingface/transformers | 4.3.1 | Apache-2.0 | Inférence locale |
 | onnxruntime-web | 1.31.0-dev (épinglée) | MIT | Moteur WASM/WebGPU |
 | Office.js (CDN Microsoft) | 1 | Licence Microsoft | API Outlook |
+| Icônes (tracés Lucide, recopiés dans `src/ui/icons.ts`) | — | ISC (notice incluse dans le fichier) | Interface |
 | Whisper (onnx-community) | tiny/base/small/large-v3-turbo | Apache-2.0 / MIT | Transcription |
 | Qwen2.5-1.5B-Instruct, Qwen3-0.6B, Granite 4.0 350M | — | Apache-2.0 | Rédaction (expérimental) |
-| Outils de dev : Vite, Vitest, TypeScript, jsdom, fast-xml-parser, playwright-core | — | MIT / Apache-2.0 | Build et tests |
+| Outils de dev : Vite, Vitest, @vitest/coverage-v8, TypeScript, jsdom, fast-xml-parser, playwright-core, ESLint, typescript-eslint, globals | — | MIT / Apache-2.0 | Build, analyse statique et tests |
+| axe-core (dev) | 4.10.3 | MPL-2.0 | Audit d'accessibilité (`scripts/audit-ui.mjs`), non livré dans l'application |
 
 `npm audit` : 0 vulnérabilité au 2026-10-12. Versions épinglées dans `package-lock.json`.
 

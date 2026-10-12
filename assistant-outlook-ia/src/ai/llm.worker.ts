@@ -5,7 +5,7 @@
  * Une génération peut être interrompue (bouton « Arrêter ») sans décharger le modèle.
  */
 
-import { errorMessage, loadTransformers, progressForwarder } from './workerEnv';
+import { errorMessage, loadTransformers, pinRevision, progressForwarder } from './workerEnv';
 import type { ChatTurn, GenerateRequest, TypedWorkerScope, WorkerRequest } from './workerProtocol';
 
 const scope = self as unknown as TypedWorkerScope;
@@ -53,6 +53,7 @@ scope.onmessage = (ev: MessageEvent<WorkerRequest>) => {
     try {
       if (msg.type === 'load') {
         T = await loadTransformers(msg.env);
+        pinRevision(T.env, msg.revision);
         stopper = new T.InterruptableStoppingCriteria();
         gen = (await T.pipeline('text-generation', msg.repo, {
           revision: msg.revision,

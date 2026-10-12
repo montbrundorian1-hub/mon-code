@@ -11,6 +11,15 @@
 - [x] Diagnostic de compatibilité, rapport technique expurgé.
 - [x] 113 tests automatisés + test navigateur de bout en bout.
 
+## Audit n°2 — livré (2026-10-12)
+
+- [x] Robustesse des moteurs (plantage, délais, chargements concurrents), micro sans double ouverture, arrêt de génération IA.
+- [x] Office.js depuis le CDN officiel actuel, démonstration immédiate hors Outlook, révisions de modèles figées.
+- [x] Corrections fonctionnelles (ponctuation dictée, remplacement par mot entier, recherche, vérifications recalculées).
+- [x] Refonte visuelle complète (conversation, orbe de dictée, thèmes, contraste élevé) — [DESIGN.md](DESIGN.md).
+- [x] Piste « reconnaissance vocale native » vérifiée : non disponible en français dans Edge ; Whisper conservé.
+- [x] 162 tests, ESLint 0, couverture 80,8 % des lignes, test navigateur réel 22/22 (avec IA locale).
+
 ## Prochaines étapes immédiates (dépendent de vos tests dans le webmail)
 
 1. **Résultats de USER_TESTS.md §5–§7** : surfaces disponibles, jeux d'API réels, micro dans le panneau.

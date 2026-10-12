@@ -2,6 +2,11 @@
 
 Complément Outlook (Outlook Web App, **Exchange on-premises**) pour **dicter**, **rédiger**, **répondre** et **rechercher**, avec des modèles d'IA **open source exécutés localement dans Edge**. Coût : 0 €. Aucun envoi automatique, aucune IA cloud, aucune conservation des dictées ou des mails.
 
+![Aperçu : accueil, dictée en cours, rédaction](docs/design/light-02-dicter.png)
+
+Interface inspirée des messageries d'IA : accueil personnalisé, orbe de dictée, conversation avec l'assistant,
+thèmes clair et sombre, accessible (WCAG AA, contraste élevé). Voir [docs/DESIGN.md](docs/DESIGN.md).
+
 > ⚠️ **Prototype — données fictives uniquement.** Une IA locale n'autorise pas, à elle seule, le traitement de données de patients. Toute utilisation sur des messages réels nécessite l'accord de l'établissement (DPO / RSSI). Voir [docs/SECURITY.md](docs/SECURITY.md).
 
 ## Ce qui fonctionne (vérifié)
@@ -15,7 +20,8 @@ Complément Outlook (Outlook Web App, **Exchange on-premises**) pour **dicter**,
 | Transcription « en direct » | ⚠️ par segments | Le texte apparaît après chaque pause ; texte provisoire seulement si le poste est rapide (WebGPU). |
 | **Rédaction classique (sans IA)** : nettoyage, ponctuation, formules adaptées au destinataire | ✅ | Tests unitaires + navigateur. |
 | Rédaction par **IA locale** (Qwen) | ⚠️ expérimental | Fonctionne dans le navigateur (Qwen3-0.6B : ~60 s par mail sur processeur) ; propositions contrôlées et écartées si elles altèrent dates, doses, nombres, médicaments, noms, questions ou négations. |
-| Comparaison original / rédigé, commandes (« plus court », « en liste »…), conversation vocale | ✅ | Tests. |
+| Comparaison original / rédigé, consignes écrites ou dictées (« plus court », « en liste », « remplace X par Y »…), bouton **Arrêter** pendant une génération | ✅ | Tests + navigateur. |
+| Vérifications (dates, doses, nombres, médicaments) recalculées après chaque modification | ✅ | Tests. |
 | Insertion dans le brouillon (au curseur / en tête), signature conservée, aucun envoi | ✅ simulé | Office.js simulé + brouillon de démonstration. **À confirmer dans le webmail** (docs/USER_TESTS.md §11). |
 | Réponse (proposition / guidée / assistant) | ✅ | Tests sur messages fictifs. |
 | Recherche | ⚠️ démonstration | Messages fictifs uniquement ; boîte réelle désactivée ([étude](docs/EXCHANGE_SEARCH_FEASIBILITY.md)). |
@@ -26,14 +32,17 @@ Complément Outlook (Outlook Web App, **Exchange on-premises**) pour **dicter**,
 ```bash
 cd assistant-outlook-ia
 npm install
-npm test            # 113 tests automatisés
+npm test            # 162 tests automatisés
+npm run lint        # analyse statique (0 erreur)
 npm run dev         # http://localhost:3000 dans Edge (mode démonstration)
 ```
 
-1. Bandeau → **J'ai compris**.
-2. Onglet **Dicter** : choisir le modèle recommandé, cocher le consentement (taille affichée), **Télécharger et charger**.
-3. Cliquer sur le micro, dicter un texte **fictif**, **Arrêter**, **Générer le mail**.
-4. Onglet **Rédiger** : relire l'encadré « À vérifier », comparer, modifier, **Insérer** (brouillon simulé en démo).
+1. Carte de bienvenue → **J'ai compris**.
+2. Onglet **Dicter** : modèle recommandé, cocher le consentement (taille affichée), **Télécharger et activer**.
+3. Toucher l'**orbe**, dicter un texte **fictif**, **Terminer**, puis **Rédiger le mail**.
+4. Onglet **Rédiger** : relire les vérifications, comparer (Original / Différences), demander une modification
+   dans la zone de saisie (« plus court »…), **Insérer dans Outlook** (brouillon simulé en démo).
+   Sans micro : écrire ou coller directement le texte dans la zone de saisie de « Rédiger ».
 
 ## Installer dans Outlook
 
@@ -43,7 +52,7 @@ npm run dev         # http://localhost:3000 dans Edge (mode démonstration)
 
 ## Preuves de test
 
-`docs/e2e/` : résultats du test navigateur de bout en bout (22/22), journal des requêtes externes, transcription obtenue et captures d'écran (données fictives).
+`docs/e2e/` : résultats du test navigateur de bout en bout, journal des requêtes externes, transcription obtenue et captures d'écran (données fictives). `docs/design/` : captures de l'interface (clair, sombre, contraste élevé).
 
 ## Documentation
 
@@ -52,7 +61,9 @@ npm run dev         # http://localhost:3000 dans Edge (mode démonstration)
 - [docs/SECURITY.md](docs/SECURITY.md) — confidentialité, CSP, domaines contactés, risques résiduels.
 - [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) — hébergement HTTPS gratuit, manifest, mises à jour, retour arrière.
 - [docs/USER_TESTS.md](docs/USER_TESTS.md) — procédure de test pas à pas (non-développeur).
-- [docs/AUDIT.md](docs/AUDIT.md) — audit technique, esthétique et pratique (avant / après).
+- [docs/AUDIT.md](docs/AUDIT.md) — audits n°1 et n°2 : constats, corrections, mesures avant / après.
+- [docs/DESIGN.md](docs/DESIGN.md) — système de design (couleurs et contrastes, composants, accessibilité).
+- [docs/PISTE_RECONNAISSANCE_NATIVE.md](docs/PISTE_RECONNAISSANCE_NATIVE.md) — reconnaissance vocale native du navigateur : vérification réelle.
 - [docs/ROADMAP.md](docs/ROADMAP.md) — suite du projet.
 - [docs/EXCHANGE_SEARCH_FEASIBILITY.md](docs/EXCHANGE_SEARCH_FEASIBILITY.md) — recherche dans toute la boîte : conditions et limites.
 
@@ -63,6 +74,8 @@ npm run dev         # http://localhost:3000 dans Edge (mode démonstration)
 | `npm run dev` / `npm run dev:https` | Serveur de développement (HTTP localhost / HTTPS avec certificats Office). |
 | `npm run build` | Typage + site statique dans `dist/`. |
 | `npm test` | Tests unitaires et d'intégration (Vitest + jsdom). |
+| `npm run lint` | Analyse statique ESLint (règles typées). |
+| `node scripts/audit-ui.mjs [dossier]` | Audit d'interface (axe, débordements, captures 320/450 px, clair/sombre), après `npm run build`. |
 | `npm run e2e -- --asr whisper-small [--llm qwen3-0.6b]` | Test de bout en bout dans Chromium (télécharge réellement les modèles). |
 | `npm run manifest -- <url>` | Génère `manifest.xml` et `manifest.dev.xml`. |
 

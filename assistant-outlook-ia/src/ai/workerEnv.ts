@@ -56,6 +56,18 @@ export async function loadTransformers(opts: WorkerEnvOptions): Promise<Transfor
   return mod;
 }
 
+/**
+ * Force la révision figée pour TOUTES les requêtes du modèle.
+ *
+ * Constat (audit n°2, Transformers.js 4.3.1) : `pipeline()` transmet bien `revision` au téléchargement
+ * des fichiers, mais pas aux requêtes préalables (liste des fichiers, tailles pour la progression),
+ * qui interrogeaient la branche `main`. Le gabarit d'URL contient donc directement l'empreinte de
+ * commit : liste, tailles et poids proviennent tous de la version évaluée.
+ */
+export function pinRevision(env: { remotePathTemplate: string }, revision: string): void {
+  env.remotePathTemplate = /^[0-9a-f]{40}$/.test(revision) ? `{model}/resolve/${revision}/` : '{model}/resolve/{revision}/';
+}
+
 /** Normalise les callbacks de progression de Transformers.js (aucun contenu utilisateur). */
 export function progressForwarder(post: (m: ProgressMessage) => void) {
   return (info: { status: string; loaded?: number; total?: number; file?: string }) => {
@@ -72,6 +84,12 @@ export function errorMessage(e: unknown): string {
   const msg = e instanceof Error ? e.message : String(e);
   if (/out of memory|OOM|Aborted|memory access out of bounds|Array buffer allocation failed|RangeError/i.test(msg)) {
     return 'MEMOIRE: mémoire insuffisante pour ce modèle';
+  }
+  if (/\b429\b|Too Many Requests/i.test(msg)) {
+    return 'RESEAU: trop de demandes — huggingface.co limite temporairement les téléchargements ; réessayez dans quelques minutes';
+  }
+  if (/\((5\d\d)\)|\b50[234]\b/.test(msg)) {
+    return `RESEAU: serveur de modèles momentanément indisponible (${msg.slice(0, 120)})`;
   }
   if (/fetch|network|Failed to fetch|NetworkError|404|403|bloquée/i.test(msg)) {
     return `RESEAU: téléchargement impossible (${msg.slice(0, 160)})`;

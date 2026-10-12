@@ -142,3 +142,22 @@ describe('Nettoyage des transcriptions Whisper', () => {
     expect(cleanTranscript('Le staff est jeudi. Merci d’avance.')).toBe('Le staff est jeudi. Merci d’avance.');
   });
 });
+
+describe('Révision figée pour toutes les requêtes de modèle (audit n°2)', () => {
+  it('le gabarit d’URL contient l’empreinte de commit, y compris pour la liste et la taille des fichiers', async () => {
+    const { pinRevision } = await import('../src/ai/workerEnv');
+    const env = { remotePathTemplate: '{model}/resolve/{revision}/' };
+    pinRevision(env, '36050c46d777d46dc4b5f43f6d90574fc38f8732');
+    expect(env.remotePathTemplate).toBe('{model}/resolve/36050c46d777d46dc4b5f43f6d90574fc38f8732/');
+    pinRevision(env, 'main');
+    expect(env.remotePathTemplate).toBe('{model}/resolve/{revision}/');
+  });
+
+  it('erreurs réseau explicites : limitation de débit (429) et serveur indisponible', async () => {
+    const { errorMessage } = await import('../src/ai/workerEnv');
+    expect(errorMessage(new Error('Error (429) occurred while trying to load file: "https://huggingface.co/x/config.json".'))).toMatch(/^RESEAU: trop de demandes/);
+    expect(errorMessage(new Error('Error (503) occurred while trying to load file'))).toMatch(/^RESEAU: serveur de modèles momentanément indisponible/);
+    expect(errorMessage(new Error('Failed to fetch'))).toMatch(/^RESEAU: téléchargement impossible/);
+    expect(errorMessage(new RangeError('Array buffer allocation failed'))).toMatch(/^MEMOIRE/);
+  });
+});

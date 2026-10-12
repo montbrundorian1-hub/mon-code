@@ -4,7 +4,7 @@
  * L'audio reçu est traité puis immédiatement libéré ; rien n'est stocké.
  */
 
-import { errorMessage, loadTransformers, progressForwarder } from '../ai/workerEnv';
+import { errorMessage, loadTransformers, pinRevision, progressForwarder } from '../ai/workerEnv';
 import type { TranscribeRequest, TypedWorkerScope, WorkerRequest } from '../ai/workerProtocol';
 import { cleanTranscript } from './clean';
 
@@ -37,6 +37,7 @@ scope.onmessage = (ev: MessageEvent<WorkerRequest>) => {
     try {
       if (msg.type === 'load') {
         const T = await loadTransformers(msg.env);
+        pinRevision(T.env, msg.revision);
         const p = await T.pipeline('automatic-speech-recognition', msg.repo, {
           revision: msg.revision,
           dtype: msg.dtype as never,

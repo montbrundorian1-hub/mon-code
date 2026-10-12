@@ -19,7 +19,7 @@ Légende : ✅ confirmé (source officielle ou test réel) · 🧪 testé en sim
 | Signature, réponses, brouillons HTML préservés | 🧪 | Insertion au curseur/en tête uniquement, HTML échappé ; jamais `setAsync`. ❓ à confirmer dans OWA (USER_TESTS §11). |
 | EWS / recherche dans toute la boîte | ❌ en V1 | Nécessite `ReadWriteMailbox` + `OAuthAuthentication` côté serveur ([étude](EXCHANGE_SEARCH_FEASIBILITY.md)). |
 | Synchronisation en arrière-plan | ❌ | Un complément web ne s'exécute que panneau ouvert. |
-| Office.js + CSP de l'application | ✅ hors Outlook / ❓ dans OWA | Hors Outlook, Office.js tente de charger sa télémétrie (`telemetryservice.firstpartyapps.oaspapps.com`), **bloquée** par la CSP sans effet sur l'application. Si, dans OWA, le badge reste « Démo » alors que le panneau est ouvert dans Outlook, consulter Diagnostic → « Ressources bloquées par la CSP ». |
+| Office.js + CSP de l'application | ✅ hors Outlook / ❓ dans OWA | Office.js est chargé depuis le **CDN officiel actuel** (`officeapis.public.onecdn.static.microsoft/1/office.js`), le même que le « Hello world » validé au CHU. Hors Outlook, cette version lève « hostInfo validation failed » et `Office.onReady` ne répond jamais : l'application détecte donc l'ouverture par Outlook (panneau dans un cadre, ou paramètre `_host_Info`) et passe **immédiatement** en démonstration sinon ; dans Outlook, l'attente est bornée à 10 s. Sa télémétrie (`telemetryservice.firstpartyapps.oaspapps.com`) est **bloquée** par la CSP. Si, dans OWA, le badge reste « Démo », consulter Diagnostic → « Ouverture par Outlook » et « Ressources bloquées par la CSP ». |
 
 ## 2. Microphone
 
@@ -38,7 +38,7 @@ Légende : ✅ confirmé (source officielle ou test réel) · 🧪 testé en sim
 | **Whisper multilingue** (Transformers.js 4.3.1 + ONNX Runtime Web) | ✅ | ✅ | **Retenu.** |
 | Whisper « .en » | ❌ anglais seul | | Exclu (test automatisé : aucun modèle `.en` au catalogue). |
 | Web Speech API d'Edge (par défaut) | ✅ | ❌ **cloud Microsoft** | Exclu (données médicales). |
-| Web Speech API `processLocally` (Edge) | ❌ en, de, it, pt, es, ko seulement ; Canary/Dev ≥ 150 | ✅ | Doc Microsoft Edge consultée le 2026-10-12. Détecté automatiquement si le français devient disponible ; jamais de repli vers le cloud. |
+| Web Speech API `processLocally` (Edge) | ❌ **vérifié** : Edge 155 et 157 répondent « unavailable » pour fr-FR, même avec l'option expérimentale activée | ✅ | Vérification réelle du 2026-10-12 ([PISTE_RECONNAISSANCE_NATIVE.md](PISTE_RECONNAISSANCE_NATIVE.md)). Chrome 155 dispose d'un moteur local (SODA) mais n'est pas le navigateur du CHU. Affiché à titre informatif dans le Diagnostic ; jamais de repli vers le cloud. |
 
 ### Mesures réelles (dictée fictive synthétique de 19 s, voix Piper fr_FR, 2 phrases séparées par une pause)
 
@@ -87,7 +87,8 @@ Dans le navigateur (Chromium, WASM, 1 thread) : Qwen3-0.6B chargé en 37–41 s,
 | Domaine | Nécessaire pour | ❓ Accessible depuis le CHU |
 |---|---|---|
 | Site d'hébergement (`*.github.io`, `*.netlify.app` ou serveur interne) | Charger le panneau | À tester |
-| `appsforoffice.microsoft.com` | Office.js | Probablement (requis par tout complément) |
+| `officeapis.public.onecdn.static.microsoft` | Office.js (CDN actuel) | ✅ indirectement : le « Hello world » importé au CHU l'utilise |
+| `appsforoffice.microsoft.com` | Ancien CDN d'Office.js (autorisé par précaution) | Non nécessaire lors des tests |
 | `huggingface.co`, `*.hf.co` | Télécharger les modèles | À tester ; sinon auto-hébergement |
 
 ## 7. Tests nécessitant votre intervention (webmail réel, données fictives)

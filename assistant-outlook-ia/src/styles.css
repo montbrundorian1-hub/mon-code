@@ -2739,6 +2739,19 @@ mark {
   .switch-input:checked + .switch-track {
     background: Highlight;
   }
+  /* Les dégradés disparaissent en contraste élevé : fonds pleins pour ne rien superposer. */
+  .composer-dock,
+  .app-header {
+    background: Canvas;
+  }
+  .bubble,
+  .chip,
+  .badge,
+  .insert-card,
+  .mail-item,
+  .result {
+    border: 1px solid CanvasText;
+  }
   .thinking,
   .hero-kicker {
     background: none;

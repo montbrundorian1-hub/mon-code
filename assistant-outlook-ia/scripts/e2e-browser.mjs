@@ -85,7 +85,13 @@ page.on('worker', (w) => {
   w.on('console', (m) => m.type() === 'error' && console.log(`   [worker.error] ${m.text().slice(0, 200)}`));
 });
 
-const shot = async (name) => page.screenshot({ path: join(SHOTS, `${name}.png`), fullPage: true });
+// Capture pleine page lisible : l'en-tête et la zone de saisie « collants » sont remis dans le flux le temps
+// de la capture (sinon ils apparaissent au milieu de l'image), animations terminées.
+const shot = async (name) => {
+  const style = await page.addStyleTag({ content: '.app-header, .composer-dock { position: static !important; }' });
+  await page.screenshot({ path: join(SHOTS, `${name}.png`), fullPage: true, animations: 'disabled' });
+  await style.evaluate((el) => el.remove());
+};
 const t0 = Date.now();
 try {
   // 1. Démarrage
