@@ -9,7 +9,7 @@ Le complément est un **site web statique** (dossier `dist/` après compilation)
 ```bash
 cd assistant-outlook-ia
 npm install
-npm test          # 104 tests
+npm test          # 113 tests
 npm run build     # produit dist/ (~27 Mo, dont 26,9 Mo de moteur WebAssembly)
 ```
 

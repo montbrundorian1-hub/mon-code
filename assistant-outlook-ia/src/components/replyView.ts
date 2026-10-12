@@ -12,7 +12,7 @@ import { DemoMailHost } from '../mock/demoHost';
 import { DEMO_MESSAGES } from '../mock/messages';
 import { addHistory } from '../security/sessionMemory';
 import type { AppContext } from '../ui/context';
-import { button, h, replace, toast } from '../ui/dom';
+import { autoRows, button, h, replace, toast } from '../ui/dom';
 import { insertBar, type InsertBarElement } from './insertBar';
 import { validationPanel } from './validationPanel';
 
@@ -46,7 +46,7 @@ export function replyView(ctx: AppContext): HTMLElement {
       );
       replace(
         sourceArea,
-        h('h3', {}, 'Message reçu (fictif)'),
+        h('h2', {}, 'Message reçu (fictif)'),
         h('p', { class: 'muted small' }, 'Démonstration : choisissez un message inventé. Aucune boîte réelle n’est consultée.'),
         sel,
         button(
@@ -63,7 +63,7 @@ export function replyView(ctx: AppContext): HTMLElement {
     if (info.mode === 'read' || info.mode === 'compose') {
       replace(
         sourceArea,
-        h('h3', {}, info.mode === 'read' ? 'Message ouvert dans Outlook' : 'Réponse en cours (message cité)'),
+        h('h2', {}, info.mode === 'read' ? 'Message ouvert dans Outlook' : 'Réponse en cours (message cité)'),
         h(
           'p',
           { class: 'caution' },
@@ -73,7 +73,7 @@ export function replyView(ctx: AppContext): HTMLElement {
       );
       return;
     }
-    replace(sourceArea, h('h3', {}, 'Aucun message'), h('p', {}, 'Ouvrez un message dans Outlook, puis rouvrez le panneau.'));
+    replace(sourceArea, h('h2', {}, 'Aucun message'), h('p', {}, 'Ouvrez un message dans Outlook, puis rouvrez le panneau.'));
   }
 
   async function load(): Promise<void> {
@@ -104,7 +104,7 @@ export function replyView(ctx: AppContext): HTMLElement {
       h(
         'section',
         { class: 'card' },
-        h('h3', {}, 'Analyse locale'),
+        h('h2', {}, 'Analyse locale'),
         h('p', {}, h('strong', {}, 'De : '), received.from || 'inconnu', h('br'), h('strong', {}, 'Objet : '), received.subject || '(sans objet)'),
         h('details', {}, h('summary', {}, 'Afficher le message'), h('pre', { class: 'pre' }, received.body)),
         a.questions.length ? h('div', {}, h('strong', {}, 'Questions détectées'), h('ul', {}, ...a.questions.map((q) => h('li', {}, q)))) : h('p', { class: 'muted' }, 'Aucune question explicite détectée.'),
@@ -254,14 +254,14 @@ export function replyView(ctx: AppContext): HTMLElement {
           : null,
       );
     }
-    replace(workArea, h('section', { class: 'card' }, h('h3', {}, 'Rédiger la réponse'), modeTabs(), body));
+    replace(workArea, h('section', { class: 'card' }, h('h2', {}, 'Rédiger la réponse'), modeTabs(), body));
   }
 
   function renderResult(): void {
     bar?.dispose();
     bar = null;
     if (!outcome) return replace(resultArea);
-    const ta = h('textarea', { class: 'editor result', rows: 10, 'aria-label': 'Réponse (modifiable)' }) as HTMLTextAreaElement;
+    const ta = h('textarea', { class: 'editor result', rows: autoRows(current, 6), 'aria-label': 'Réponse (modifiable)' }) as HTMLTextAreaElement;
     ta.value = current;
     ta.addEventListener('input', () => (current = ta.value));
     replace(
@@ -269,7 +269,7 @@ export function replyView(ctx: AppContext): HTMLElement {
       h(
         'section',
         { class: 'card' },
-        h('h3', {}, 'Prévisualisation'),
+        h('h2', {}, 'Prévisualisation'),
         ta,
         validationPanel(outcome, (t) => {
           current = t;

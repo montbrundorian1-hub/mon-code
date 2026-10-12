@@ -11,7 +11,7 @@ const STATUS_LABEL: Record<Check['status'], string> = { ok: 'OK', warn: 'Attenti
 
 export function diagnosticView(ctx: AppContext): HTMLElement {
   const root = h('div', { class: 'view view-diagnostic' });
-  const list = h('div', { 'aria-live': 'polite' }, h('p', { class: 'muted' }, 'Analyse en cours…'));
+  const list = h('div', { class: 'list-gap', 'aria-live': 'polite' }, h('p', { class: 'muted' }, 'Analyse en cours…'));
   const micResult = h('div');
   let last: Check[] = [];
 
@@ -25,7 +25,7 @@ export function diagnosticView(ctx: AppContext): HTMLElement {
         h(
           'section',
           { class: 'card' },
-          h('h3', {}, g),
+          h('h2', {}, g),
           h(
             'ul',
             { class: 'checks' },

@@ -92,7 +92,7 @@ export function formatDuration(ms: number): string {
 let toastHost: HTMLElement | null = null;
 export function toast(message: string, kind: 'ok' | 'error' | 'info' = 'info', ms = 4000): void {
   if (!toastHost) {
-    toastHost = h('div', { class: 'toasts', role: 'status', 'aria-live': 'polite' });
+    toastHost = h('section', { class: 'toasts', role: 'region', 'aria-label': 'Notifications', 'aria-live': 'polite' });
     document.body.append(toastHost);
   }
   const t = h('div', { class: `toast toast-${kind}` }, icon(kind === 'ok' ? 'check' : kind === 'error' ? 'warn' : 'info'), message);
@@ -119,4 +119,10 @@ export async function copyText(text: string): Promise<boolean> {
     ta.remove();
     return ok;
   }
+}
+
+/** Nombre de lignes adapté au contenu (évite les grands vides et les barres de défilement inutiles). */
+export function autoRows(text: string, min = 4, max = 18, charsPerLine = 46): number {
+  const lines = text.split('\n').reduce((n, l) => n + Math.max(1, Math.ceil(l.length / charsPerLine)), 0);
+  return Math.max(min, Math.min(max, lines + 1));
 }

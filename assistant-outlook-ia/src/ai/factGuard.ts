@@ -121,7 +121,8 @@ export function extractFacts(text: string): Fact[] {
   // Nombres isolés restants (hors ceux déjà couverts par une date/heure/dose)
   const covered = new Set<string>();
   for (const f of facts.values()) for (const n of f.key.match(/\d+(?:\.\d+)?/g) ?? []) covered.add(n);
-  for (const m of s.matchAll(/(?<![\d.,])(\d+(?:[.,]\d+)?)(?![\d.,])/g)) {
+  // Un point ou une virgule de ponctuation après le nombre (« chambre 12. ») ne doit pas l'exclure.
+  for (const m of s.matchAll(/(?<!\d|\d[.,])(\d+(?:[.,]\d+)?)(?!\d|[.,]\d)/g)) {
     const n = normNumber(m[1]);
     if (!covered.has(n)) add({ kind: 'nombre', key: n, label: m[1] });
   }

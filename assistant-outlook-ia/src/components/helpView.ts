@@ -25,7 +25,7 @@ export function helpView(): HTMLElement {
     h(
       'section',
       { class: 'card' },
-      h('h3', {}, 'Confidentialité'),
+      h('h2', {}, 'Confidentialité'),
       h(
         'ul',
         {},
@@ -39,7 +39,7 @@ export function helpView(): HTMLElement {
     h(
       'section',
       { class: 'card' },
-      h('h3', {}, 'Limites connues'),
+      h('h2', {}, 'Limites connues'),
       h(
         'ul',
         {},
@@ -53,10 +53,10 @@ export function helpView(): HTMLElement {
     h(
       'section',
       { class: 'card' },
-      h('h3', {}, 'Raccourcis'),
+      h('h2', {}, 'Raccourcis'),
       h('ul', {}, h('li', {}, 'Ctrl + Maj + Espace (configurable) : démarrer / mettre en pause la dictée.'), h('li', {}, 'Échap : arrêt immédiat du micro.')),
     ),
-    h('section', { class: 'card' }, h('h3', {}, 'Historique de session'), hist),
+    h('section', { class: 'card' }, h('h2', {}, 'Historique de session'), hist),
     h('p', { class: 'muted small center' }, `Assistant Outlook IA — version ${APP_VERSION} — logiciel libre, modèles open source.`),
   );
 }

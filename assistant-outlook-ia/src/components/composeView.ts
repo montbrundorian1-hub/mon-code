@@ -7,7 +7,7 @@ import { parseCommand } from '../ai/commands';
 import { resolveStyle, type Formality } from '../ai/style';
 import { addHistory } from '../security/sessionMemory';
 import type { AppContext } from '../ui/context';
-import { button, h, icon, replace, toast } from '../ui/dom';
+import { autoRows, button, h, icon, replace, toast } from '../ui/dom';
 import { DemoMailHost } from '../mock/demoHost';
 import { insertBar, type InsertBarElement } from './insertBar';
 import { diffView, validationPanel } from './validationPanel';
@@ -24,7 +24,7 @@ export function composeView(ctx: AppContext): HTMLElement {
     h('option', { value: 'familier' }, 'Entre collègues'),
   ) as HTMLSelectElement;
   const aiBox = h('input', { type: 'checkbox' }) as HTMLInputElement;
-  const aiLabel = h('label', { class: 'inline' }, aiBox, h('span'));
+  const aiLabel = h('div');
   const toneInfo = h('p', { class: 'muted small' });
   const resultArea = h('div');
   const busy = h('div', { class: 'busy', hidden: true }, h('span', { class: 'spinner' }), h('span', { class: 'busy-text' }, 'Rédaction…'), h('pre', { class: 'stream' }));
@@ -35,13 +35,23 @@ export function composeView(ctx: AppContext): HTMLElement {
     const ready = ctx.llm.isReady();
     aiBox.disabled = !ready;
     if (!ready) aiBox.checked = false;
-    replace(aiLabel.lastElementChild!, ready ? ` Améliorer avec l’IA locale (${ctx.assistant.aiLabel()}) — expérimental` : ' IA locale non chargée : mode classique (règles, sans IA)');
+    replace(
+      aiLabel,
+      ready
+        ? h('label', { class: 'inline' }, aiBox, ` Améliorer avec l’IA locale (${ctx.assistant.aiLabel()}) — expérimental`)
+        : h(
+            'p',
+            { class: 'muted small ai-off' },
+            'IA locale non chargée : mode classique (règles, sans IA). ',
+            button('Charger un modèle IA', () => ctx.navigate('modeles'), { kind: 'ghost' }),
+          ),
+    );
   };
 
   const refreshTone = async () => {
     await ctx.refreshRecipients();
     const st = resolveStyle({ recipients: ctx.recipients, formality: toneSel.value as Formality }, sourceTa.value);
-    toneInfo.textContent = `Ton retenu : ${st.formality} (${st.reason.toLowerCase()}). Formule : « ${st.greeting} » … « ${st.closing} »`;
+    toneInfo.textContent = `Ton retenu : ${st.formality} (${st.reason.charAt(0).toLowerCase()}${st.reason.slice(1)}). Formule : « ${st.greeting} » … « ${st.closing} »`;
   };
 
   const setBusy = (on: boolean, text = 'Rédaction…') => {
@@ -191,7 +201,7 @@ export function composeView(ctx: AppContext): HTMLElement {
     );
     let body: HTMLElement;
     if (tab === 'redige') {
-      const ta = h('textarea', { class: 'editor result', rows: 12, 'aria-label': 'Version rédigée (modifiable)' }) as HTMLTextAreaElement;
+      const ta = h('textarea', { class: 'editor result', rows: autoRows(ctx.draft.current, 6), 'aria-label': 'Version rédigée (modifiable)' }) as HTMLTextAreaElement;
       ta.value = ctx.draft.current;
       ta.addEventListener('change', () => ctx.setDraftText(ta.value));
       body = ta;
@@ -209,7 +219,7 @@ export function composeView(ctx: AppContext): HTMLElement {
       h(
         'section',
         { class: 'card' },
-        h('h3', {}, 'Résultat'),
+        h('h2', {}, 'Résultat'),
         tabs,
         body,
         h(
@@ -253,7 +263,7 @@ export function composeView(ctx: AppContext): HTMLElement {
     h(
       'section',
       { class: 'card' },
-      h('h3', {}, 'Texte original'),
+      h('h2', {}, 'Texte original'),
       sourceTa,
       h('div', { class: 'row wrap' }, toneSel),
       toneInfo,

@@ -92,8 +92,12 @@ const QUESTION_START = new RegExp(
 );
 
 /** « pouvez vous » → « pouvez-vous » ; phrase interrogative terminée par « . » → « ? ». */
+const POLITE_QUESTION = /(?<![.!?\n,;:])(?<!\b(?:comment|quand|où|pourquoi|combien|que|qu'|quoi|si|et|ou|^))(\s)((?:pouvez|pourriez|auriez|voulez|voudriez|sauriez|avez|peux|pourrais|aurais)-(?:vous|tu)\b)/giu;
+
 export function fixQuestions(text: string): string {
   let s = text.replace(INVERSION_RE, '$1-$2');
+  // Dictée sans ponctuation : « … chambre 12 pouvez-vous apporter … » → nouvelle phrase interrogative.
+  s = s.replace(POLITE_QUESTION, (_m, sp: string, q: string) => `.${sp}${q.charAt(0).toUpperCase()}${q.slice(1)}`);
   s = s.replace(/(?<=^|[.!?]\s+|\n)([^.!?\n]+)\.(?=\s|$)/g, (m, sentence: string) =>
     QUESTION_START.test(sentence.trim()) ? `${sentence} ?` : m,
   );
@@ -116,6 +120,9 @@ export function normalizeTypography(text: string): string {
     .replace(/«\s*/g, '« ')
     .replace(/\s*»/g, ' »')
     .replace(/(\d) :(\d)/g, '$1:$2') // heures « 14:30 »
+    // Espace insécable entre un nombre et son unité, et dans « 14 h 30 » (pas de coupure en fin de ligne).
+    .replace(/(\d) (?=(?:h|mg|g|µg|ml|kg|l|ui|UI|mmol|%|€|cp|jours?|semaines?|mois|heures?|min)(?![\p{L}]))/gu, '$1\u00A0')
+    .replace(/(\d\u00A0h) (?=\d)/g, '$1\u00A0')
     .replace(/(https?) :/g, '$1:')
     .trim();
   // Majuscule en début de phrase et de ligne
@@ -126,11 +133,17 @@ export function normalizeTypography(text: string): string {
 const TITLE_WORD = '(?:[Dd]octeur|[Dd]r\\.?|[Pp]rofesseur|[Pp]r\\.?|[Mm]adame|[Mm]onsieur|[Mm]me|[Mm]\\.|[Cc]her|[Cc]hère)';
 const NAME_WORD = '[A-ZÀ-ÖØ-Þ][\\p{L}\'-]+';
 /**
+ * Nom dicté en minuscules après un titre (« bonjour docteur martin je… ») : un seul mot,
+ * qui ne doit pas être un mot grammatical (pronom, article, préposition…).
+ */
+const LOWER_NAME_AFTER_TITLE =
+  "(?:\\s+(?!(?:je|j'|nous|vous|tu|il|elle|on|ils|elles|le|la|les|l'|un|une|des|du|de|d'|pour|par|au|aux|et|ou|mais|merci|ce|cet|cette|ces|ça|c'|est|suite|concernant|comme|si|voici|voilà|en|à|qui|que|qu')(?![\\p{L}']))\\p{Ll}[\\p{L}'-]+)";
+/**
  * Formule d'appel en tête de texte : « Bonjour », « Bonjour à tous », « Bonjour Docteur Martin »,
  * « Madame, Monsieur », « Chers collègues »… éventuellement sans ponctuation (dictée brute).
  */
 const GREETING_RE = new RegExp(
-  `^(?:(?:[Bb]onjour|[Bb]onsoir|[Ss]alut|[Cc]oucou)(?:\\s*,?\\s*(?:à tous et à toutes|à toutes et à tous|à tous|à toutes|à vous|tout le monde|${TITLE_WORD}(?:\\s+${NAME_WORD}){0,2}|${NAME_WORD}(?=\\s*[,.!:\\n])))?|(?:[Mm]adame,?\\s*[Mm]onsieur|[Mm]esdames,?\\s*[Mm]essieurs|[Cc]hers collègues|[Cc]hères collègues|[Cc]hers tous|${TITLE_WORD}(?:\\s+${NAME_WORD}){0,2}(?=\\s*,)))\\s*[,.!:]?`,
+  `^(?:(?:[Bb]onjour|[Bb]onsoir|[Ss]alut|[Cc]oucou)(?:\\s*,?\\s*(?:à tous et à toutes|à toutes et à tous|à tous|à toutes|à vous|tout le monde|${TITLE_WORD}(?:(?:\\s+${NAME_WORD}){1,2}|${LOWER_NAME_AFTER_TITLE})?|${NAME_WORD}(?=\\s*[,.!:\\n])))?|(?:[Mm]adame,?\\s*[Mm]onsieur|[Mm]esdames,?\\s*[Mm]essieurs|[Cc]hers collègues|[Cc]hères collègues|[Cc]hers tous|${TITLE_WORD}(?:\\s+${NAME_WORD}){0,2}(?=\\s*,)))\\s*[,.!:]?`,
   'u',
 );
 const CLOSING_ITEM =
@@ -155,6 +168,7 @@ export function splitMail(text: string): MailParts {
       .replace(/\b[Dd]r\.?(?=\s)|\bdocteur\b/, 'Docteur')
       .replace(/\b[Pp]r\.?(?=\s)|\bprofesseur\b/, 'Professeur')
       .replace(/\b(madame|monsieur)\b/g, (t) => t.charAt(0).toUpperCase() + t.slice(1))
+      .replace(/(Docteur|Professeur|Madame|Monsieur|Cher|Chère)\s+(\p{Ll})/u, (_m, t: string, c: string) => `${t} ${c.toUpperCase()}`)
       .replace(/^(bonjour|bonsoir)\s*,\s*/i, '$1 ');
     greeting = `${greeting.charAt(0).toUpperCase()}${greeting.slice(1)},`;
     rest = rest.slice(g[0].length).trim();

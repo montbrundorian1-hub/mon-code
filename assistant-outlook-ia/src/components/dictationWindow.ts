@@ -40,7 +40,8 @@ export function openDictationWindow(ctx: AppContext): void {
       const dialog = res.value;
       dialog.addEventHandler(Office.EventType.DialogMessageReceived, (arg) => {
         const a = arg as { message?: string; origin?: string };
-        if (a.origin && a.origin !== location.origin) return;
+        // Origine exigée et identique (DialogApi 1.2+ la fournit) ; sinon, seul notre propre dialogue peut émettre ce message.
+        if (a.origin !== undefined && a.origin !== location.origin) return;
         try {
           const data = JSON.parse(a.message ?? '{}');
           if (data.type === MSG_TYPE) receiveText(ctx, data.text);

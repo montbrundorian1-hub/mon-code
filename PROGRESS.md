@@ -14,8 +14,9 @@
 - [x] 3 — Version exécutable : panneau (Dicter, Rédiger, Répondre, Rechercher, Modèles, Diagnostic, Aide), mode démo, adaptateur Office.js, manifests validés par Microsoft.
 - [x] 4 — Transcription locale Whisper (worker, micro AudioWorklet, segmentation, pause/reprise, fenêtre séparée). **Testée dans Chromium** avec micro simulé.
 - [x] 5 — Rédaction : mode classique + IA locale optionnelle avec garde de faits/sens. Testée dans Chromium (Qwen3-0.6B).
-- [x] 6 — Tests : 108 tests Vitest OK ; test navigateur de bout en bout (`npm run e2e`).
+- [x] 6 — Tests : 113 tests Vitest OK ; test navigateur de bout en bout (`npm run e2e`).
 - [x] 7 — Documentation : README, ARCHITECTURE, COMPATIBILITY, SECURITY, DEPLOYMENT, USER_TESTS, ROADMAP, EXCHANGE_SEARCH_FEASIBILITY.
+- [x] 8 — Audit technique/esthétique/pratique (docs/AUDIT.md, `scripts/audit-ui.mjs`) : axe 31 → 0 violation, débordements 8 → 0, focus clavier stable pendant la dictée, rédaction de dictées non ponctuées améliorée. 113 tests.
 
 ## Faits vérifiés
 - Exchange on-prem 2016/2019/SE : Mailbox 1.1–1.5 (doc Microsoft, 2026-10-12).
@@ -36,7 +37,8 @@
 ```bash
 cd assistant-outlook-ia
 npm install          # .npmrc désactive le téléchargement CUDA d'onnxruntime-node
-npm test             # 108 tests
+npm test             # 113 tests
+node scripts/audit-ui.mjs   # audit d'interface (après npm run build)
 npm run build
 npm run e2e -- --asr whisper-small          # test navigateur réel (télécharge ~250 Mo)
 npm run dev          # http://localhost:3000 (mode démonstration)

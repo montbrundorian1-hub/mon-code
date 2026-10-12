@@ -31,8 +31,10 @@ describe('cas 2 — démarrage de l’application', () => {
     ctx = new AppContext(boot(), noWorker);
     mountApp(root, ctx);
     await tick();
-    const tabs = [...root.querySelectorAll('.tab .tab-label')].map((e) => e.textContent);
-    expect(tabs).toEqual(['Dicter', 'Rédiger', 'Répondre', 'Rechercher', 'Modèles', 'Diagnostic', 'Aide']);
+    const labels = (sel: string) => [...root.querySelectorAll(`${sel} .tab .tab-label`)].map((e) => e.textContent);
+    expect(labels('nav')).toEqual(['Dicter', 'Rédiger', 'Répondre', 'Rechercher']);
+    expect(labels('.header-tools')).toEqual(['Modèles', 'Diagnostic', 'Aide']);
+    expect(root.querySelector('h1')?.textContent).toBe('Assistant Outlook IA');
     expect(root.querySelector('.notice')?.textContent).toMatch(/données fictives/);
     expect(root.querySelector('.mic-button')).not.toBeNull();
     expect(root.querySelector('.app-footer')?.textContent).toMatch(/aucun envoi automatique/);
@@ -41,7 +43,7 @@ describe('cas 2 — démarrage de l’application', () => {
   it('le mode fenêtre de dictée n’affiche que la dictée', async () => {
     ctx = new AppContext(boot(), noWorker);
     mountApp(root, ctx, { dialogMode: true });
-    expect([...root.querySelectorAll('.tab .tab-label')].map((e) => e.textContent)).toEqual(['Dicter', 'Modèles', 'Aide']);
+    expect([...root.querySelectorAll('.tab .tab-label')].map((e) => e.textContent).sort()).toEqual(['Aide', 'Dicter', 'Modèles']);
   });
 });
 
@@ -107,7 +109,7 @@ describe('cas 29 — fonctionnalités indisponibles affichées explicitement', (
     await tick();
     expect(root.querySelector('.badges')?.textContent).toMatch(/Mode classique/);
     expect((root.querySelector('.mic-button') as HTMLButtonElement).disabled).toBe(true);
-    expect(root.textContent).toMatch(/Chargez un modèle de transcription/);
+    expect(root.textContent).toMatch(/Chargez d’abord un modèle de transcription/);
     ctx.navigate('rechercher');
     expect(root.textContent).toMatch(/Boîte réelle : Désactivée en V1/);
     ctx.navigate('rediger');

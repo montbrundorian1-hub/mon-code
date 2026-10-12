@@ -22,7 +22,7 @@ describe('cas 18 — reformulation d’un mail français fictif (mode classique)
       DR,
     );
     expect(r.text).toBe(
-      'Bonjour à tous,\n\nJe voulais dire que la réunion de service de jeudi est décalée à 14 h 30 en salle B. Merci de prévenir les internes.\n\nBien cordialement,'.replace('14 h', '14 h'),
+      'Bonjour à tous,\n\nJe voulais dire que la réunion de service de jeudi est décalée à 14\u00A0h\u00A030 en salle B. Merci de prévenir les internes.\n\nBien cordialement,',
     );
   });
 
@@ -101,8 +101,8 @@ describe('cas 20 — conservation des dates et dosages', () => {
     const a = new Assistant(fakeAi('Bonjour Docteur Martin,\n\nNous avons débuté l’amoxicilline à 2 g trois fois par jour.\n\nBien cordialement,'));
     const r = await a.draftFromDictation('nous avons débuté l’amoxicilline à 1 g trois fois par jour', DR, { useAi: true });
     expect(r.engine).toBe('classique');
-    expect(r.rejectionReason).toMatch(/1 g/);
-    expect(r.text).toContain('1 g'.replace(' ', ' '));
+    expect(r.rejectionReason).toMatch(/1\sg/);
+    expect(r.text).toContain('1\u00A0g');
   });
 
   it('écarte une proposition IA qui ajoute un nom (signature inventée)', () => {
@@ -209,5 +209,31 @@ describe('Garde de sens — questions et négations (observé lors du test navig
     // « c'est pas » (oral) → « ce n'est pas » (écrit) : même nombre de négations, pas de rejet
     expect(countNegations("c'est pas urgent")).toBe(countNegations("ce n'est pas urgent"));
     expect(countNegations('il ne prend plus son traitement')).toBe(1);
+  });
+});
+
+describe('Dictée sans ponctuation (relevé lors de l’audit)', () => {
+  it('formule d’appel avec nom en minuscules après un titre', () => {
+    const r = classicRewrite('euh bonjour docteur martin je vous confirme le staff de jeudi à 14 h 30 avec le dossier de la chambre 12 pouvez vous apporter la biologie', { recipients: [], formality: 'auto' });
+    expect(r.text.startsWith('Bonjour Docteur Martin,\n\nJe vous confirme le staff')).toBe(true);
+    expect(r.text).toContain('chambre 12. Pouvez-vous apporter la biologie ?');
+  });
+  it('ne prend pas un mot grammatical pour un nom', () => {
+    expect(classicRewrite('bonjour docteur je vous écris', { recipients: [], formality: 'auto' }).text.startsWith('Bonjour Docteur,\n\nJe vous écris')).toBe(true);
+  });
+  it('ne coupe pas une question introduite par un mot interrogatif', () => {
+    expect(classicRewrite('comment pouvez vous venir', { recipients: [], formality: 'auto' }).text).toContain('Comment pouvez-vous venir ?');
+  });
+});
+
+describe('Typographie et nombres (relevé lors de l’audit)', () => {
+  it('un nombre suivi d’un point final reste reconnu', () => {
+    expect(compareFacts('le dossier de la chambre 12 pouvez-vous', 'le dossier de la chambre 12. Pouvez-vous').ok).toBe(true);
+  });
+  it('espaces insécables : « 14 h 30 », « 1 g », « 7 jours »', () => {
+    const t = classicRewrite('staff à 14 h 30, paracétamol 1 g pendant 7 jours', { recipients: [], formality: 'auto' }).text;
+    expect(t).toContain('14\u00A0h\u00A030');
+    expect(t).toContain('1\u00A0g');
+    expect(t).toContain('7\u00A0jours');
   });
 });

@@ -26,7 +26,7 @@ Complément Outlook (Outlook Web App, **Exchange on-premises**) pour **dicter**,
 ```bash
 cd assistant-outlook-ia
 npm install
-npm test            # 108 tests automatisés
+npm test            # 113 tests automatisés
 npm run dev         # http://localhost:3000 dans Edge (mode démonstration)
 ```
 
@@ -52,6 +52,7 @@ npm run dev         # http://localhost:3000 dans Edge (mode démonstration)
 - [docs/SECURITY.md](docs/SECURITY.md) — confidentialité, CSP, domaines contactés, risques résiduels.
 - [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) — hébergement HTTPS gratuit, manifest, mises à jour, retour arrière.
 - [docs/USER_TESTS.md](docs/USER_TESTS.md) — procédure de test pas à pas (non-développeur).
+- [docs/AUDIT.md](docs/AUDIT.md) — audit technique, esthétique et pratique (avant / après).
 - [docs/ROADMAP.md](docs/ROADMAP.md) — suite du projet.
 - [docs/EXCHANGE_SEARCH_FEASIBILITY.md](docs/EXCHANGE_SEARCH_FEASIBILITY.md) — recherche dans toute la boîte : conditions et limites.
 

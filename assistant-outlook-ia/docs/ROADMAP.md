@@ -9,7 +9,7 @@
 - [x] Insertion au curseur / en tête, réponse préremplie, copie de secours ; aucun envoi.
 - [x] Recherche démonstration (fictive) en langage naturel.
 - [x] Diagnostic de compatibilité, rapport technique expurgé.
-- [x] 106 tests automatisés + test navigateur de bout en bout.
+- [x] 113 tests automatisés + test navigateur de bout en bout.
 
 ## Prochaines étapes immédiates (dépendent de vos tests dans le webmail)
 

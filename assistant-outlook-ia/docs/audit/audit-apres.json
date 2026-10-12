@@ -1,0 +1,83 @@
+{
+ "axe": {
+  "Dicter-450-light": [],
+  "Rédiger-450-light": [],
+  "Répondre-450-light": [],
+  "Rechercher-450-light": [],
+  "Modèles-450-light": [],
+  "Diagnostic-450-light": [],
+  "Aide-450-light": [],
+  "Dicter-450-dark": [],
+  "Rédiger-450-dark": [],
+  "Répondre-450-dark": [],
+  "Rechercher-450-dark": [],
+  "Modèles-450-dark": [],
+  "Diagnostic-450-dark": [],
+  "Aide-450-dark": []
+ },
+ "overflow": [],
+ "smallTargets": {
+  "Dicter": [
+   "input «  » 18×18",
+   "input «  » 18×18",
+   "input «  » 18×18",
+   "input «  » 18×18"
+  ],
+  "Rédiger": [],
+  "Répondre": [],
+  "Rechercher": [],
+  "Modèles": [
+   "input «  » 18×18",
+   "input «  » 18×18",
+   "input «  » 18×18",
+   "input «  » 18×18",
+   "input «  » 18×18",
+   "input «  » 18×18",
+   "input «  » 18×18",
+   "input «  » 18×18",
+   "input «  » 18×18",
+   "input «  » 18×18"
+  ],
+  "Diagnostic": [],
+  "Aide": []
+ },
+ "smallText": {
+  "Dicter": [],
+  "Rédiger": [],
+  "Répondre": [],
+  "Rechercher": [],
+  "Modèles": [],
+  "Diagnostic": [],
+  "Aide": []
+ },
+ "console": [
+  "320/light: Failed to create WebGPU Context Provider",
+  "320/light: Failed to create WebGPU Context Provider",
+  "320/dark: Failed to create WebGPU Context Provider",
+  "320/dark: Failed to create WebGPU Context Provider",
+  "450/light: Failed to create WebGPU Context Provider",
+  "450/light: Failed to create WebGPU Context Provider",
+  "450/dark: Failed to create WebGPU Context Provider",
+  "450/dark: Failed to create WebGPU Context Provider"
+ ],
+ "tabOrder": [
+  "input «  »",
+  "input «  »",
+  "button « Saisir le texte au clavier »",
+  "body « Assistant Outlook IAModèlesDia » [focus peu visible]",
+  "button « Modèles »",
+  "button « Diagnostic »",
+  "button « Aide »",
+  "select « Simulation Outlook »",
+  "button « Dicter »",
+  "button « Rédiger »",
+  "button « Répondre »",
+  "button « Rechercher »",
+  "button « J’ai compris »",
+  "input «  »",
+  "input «  »",
+  "button « Saisir le texte au clavier »",
+  "body « Assistant Outlook IAModèlesDia » [focus peu visible]",
+  "button « Modèles »"
+ ]
+}

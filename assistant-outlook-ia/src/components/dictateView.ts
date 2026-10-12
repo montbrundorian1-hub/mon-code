@@ -7,7 +7,7 @@ import { policyAllowsMicrophone } from '../audio/micCapture';
 import { addHistory } from '../security/sessionMemory';
 import { loadSettings } from '../security/settings';
 import type { AppContext } from '../ui/context';
-import { button, formatDuration, h, icon, replace } from '../ui/dom';
+import { autoRows, button, formatDuration, h, icon, replace } from '../ui/dom';
 import type { DictationSnapshot } from '../transcription/dictation';
 import { modelPanel } from './modelPanel';
 import { openDictationWindow } from './dictationWindow';
@@ -22,12 +22,16 @@ export function dictateView(ctx: AppContext, opts: { dialogMode?: boolean; onSen
   const editArea = h('div');
   const policyNote = h('div');
 
-  const micButton = h('button', { type: 'button', class: 'mic-button', 'aria-pressed': 'false', title: 'Démarrer / arrêter la dictée' }, icon('mic'));
+  const micButton = h('button', { type: 'button', class: 'mic-button', 'aria-pressed': 'false', 'aria-label': 'Démarrer la dictée', title: 'Démarrer / arrêter la dictée' }, icon('mic'));
   micButton.addEventListener('click', () => void toggle());
   const status = h('div', { class: 'mic-status' });
   const timer = h('div', { class: 'timer' }, '00:00');
   const meter = h('div', { class: 'meter' }, h('div', { class: 'meter-bar' }));
   const controls = h('div', { class: 'row center' });
+  // Panneau de chargement créé une seule fois (conserve le consentement coché et évite les écouteurs en double).
+  let asrPanel: HTMLElement | null = null;
+  let lastStructure = '';
+  let lastTranscript = '';
 
   async function toggle(): Promise<void> {
     const s = session.snapshot();
@@ -48,12 +52,12 @@ export function dictateView(ctx: AppContext, opts: { dialogMode?: boolean; onSen
       replace(editArea);
       return;
     }
-    const ta = h('textarea', { class: 'editor', rows: 6, 'aria-label': 'Transcription originale (modifiable)' }) as HTMLTextAreaElement;
+    const ta = h('textarea', { class: 'editor', rows: autoRows(text, 4), 'aria-label': 'Transcription originale (modifiable)' }) as HTMLTextAreaElement;
     ta.value = text;
     const useAi = h('input', { type: 'checkbox', checked: ctx.draft.useAi && ctx.llm.isReady(), disabled: !ctx.llm.isReady() }) as HTMLInputElement;
     replace(
       editArea,
-      h('h3', {}, 'Transcription originale'),
+      h('h2', {}, 'Transcription originale'),
       h('p', { class: 'muted small' }, 'Relisez et corrigez si besoin, puis générez le mail.'),
       ta,
       opts.dialogMode
@@ -65,7 +69,9 @@ export function dictateView(ctx: AppContext, opts: { dialogMode?: boolean; onSen
         : h(
             'div',
             { class: 'stack' },
-            h('label', { class: 'inline' }, useAi, ctx.llm.isReady() ? ` Améliorer avec l’IA locale (${ctx.assistant.aiLabel()})` : ' Amélioration IA : aucun modèle chargé (mode classique)'),
+            ctx.llm.isReady()
+              ? h('label', { class: 'inline' }, useAi, ` Améliorer avec l’IA locale (${ctx.assistant.aiLabel()})`)
+              : h('p', { class: 'muted small' }, 'Rédaction en mode classique (sans IA). Un modèle IA peut être chargé dans l’onglet Modèles.'),
             h(
               'div',
               { class: 'row' },
@@ -104,22 +110,46 @@ export function dictateView(ctx: AppContext, opts: { dialogMode?: boolean; onSen
         ),
       );
     }
+    const key = JSON.stringify([s.segments, s.partial, s.status === 'listening' && s.speaking, s.status === 'listening']);
+    if (key === lastTranscript) return; // pas de réannonce inutile pour les lecteurs d'écran
+    lastTranscript = key;
     replace(transcriptArea, ...items);
   }
 
   function render(): void {
     const s = session.snapshot();
     const ready = ctx.asr.isReady();
-    replace(modelArea, ready ? null : modelPanel(ctx, 'asr', { compact: true }));
-    micButton.classList.toggle('active', s.status === 'listening');
-    micButton.setAttribute('aria-pressed', String(s.status === 'listening'));
-    micButton.disabled = !ready || s.status === 'finishing';
+    // Mises à jour légères à chaque tic (250 ms) : chronomètre et niveau, sans recréer d'éléments.
     timer.textContent = formatDuration(s.elapsedMs);
     // Échelle logarithmique : -60 dB → 0 %, 0 dB → 100 %.
     const db = s.level > 0 ? 20 * Math.log10(s.level) : -60;
     (meter.firstChild as HTMLElement).style.width = `${Math.max(0, Math.min(100, Math.round(((db + 60) / 60) * 100)))}%`;
+    renderTranscript(s);
+
+    // Reconstruction de la structure uniquement si l'état change (évite la perte du focus clavier).
+    const structure = JSON.stringify([s.status, ready, s.segments.length > 0, s.error, s.notice, ctx.whisper.supportsPartial()]);
+    if (structure === lastStructure) return;
+    lastStructure = structure;
+
+    if (ready) replace(modelArea);
+    else {
+      asrPanel ??= modelPanel(ctx, 'asr', { compact: true });
+      if (!modelArea.contains(asrPanel)) {
+        replace(
+          modelArea,
+          asrPanel,
+          opts.dialogMode
+            ? null
+            : h('p', { class: 'muted small center' }, 'Pas de micro ou de modèle ? ', button('Saisir le texte au clavier', () => ctx.navigate('rediger'), { kind: 'ghost' })),
+        );
+      }
+    }
+    micButton.classList.toggle('active', s.status === 'listening');
+    micButton.setAttribute('aria-pressed', String(s.status === 'listening'));
+    micButton.setAttribute('aria-label', s.status === 'listening' ? 'Mettre la dictée en pause' : s.status === 'paused' ? 'Reprendre la dictée' : 'Démarrer la dictée');
+    micButton.disabled = !ready || s.status === 'finishing';
     const statusText: Record<string, string> = {
-      idle: ready ? 'Micro inactif' : 'Chargez un modèle de transcription pour commencer',
+      idle: ready ? 'Micro inactif — cliquez pour dicter' : 'Chargez d’abord un modèle de transcription',
       listening: 'Micro ACTIF — écoute en cours',
       paused: 'En pause — micro libéré',
       finishing: 'Fin de la transcription…',
@@ -129,7 +159,7 @@ export function dictateView(ctx: AppContext, opts: { dialogMode?: boolean; onSen
       status,
       s.status === 'listening' ? h('span', { class: 'rec-dot' }) : null,
       statusText[s.status],
-      s.status === 'listening' ? h('span', { class: 'muted small block' }, ctx.whisper.supportsPartial() ? 'Texte provisoire affiché pendant la parole.' : 'Transcription par segments, après chaque pause.') : null,
+      s.status === 'listening' ? h('span', { class: 'muted small block' }, ctx.whisper.supportsPartial() ? 'Texte provisoire affiché pendant la parole.' : 'Le texte apparaît après chaque pause.') : null,
     );
     replace(
       controls,
@@ -147,7 +177,6 @@ export function dictateView(ctx: AppContext, opts: { dialogMode?: boolean; onSen
           )
         : null,
     );
-    renderTranscript(s);
     const errorBox =
       s.error != null
         ? h(
@@ -161,7 +190,8 @@ export function dictateView(ctx: AppContext, opts: { dialogMode?: boolean; onSen
         : s.notice
           ? h('div', { class: 'alert alert-warn' }, s.notice)
           : null;
-    replace(micArea, h('div', { class: 'mic-row' }, micButton, h('div', { class: 'mic-info' }, status, timer, meter)), controls, errorBox);
+    if (!micArea.firstChild) micArea.append(h('div', { class: 'mic-row' }, micButton, h('div', { class: 'mic-info' }, status, timer, meter)), controls, h('div', { class: 'mic-messages' }));
+    replace(micArea.lastElementChild!, errorBox);
     if (s.status === 'idle') renderEdit();
   }
 
@@ -185,7 +215,7 @@ export function dictateView(ctx: AppContext, opts: { dialogMode?: boolean; onSen
     policyNote,
     modelArea,
     h('section', { class: 'card' }, micArea, shortcutLabel ? h('p', { class: 'muted small' }, `Raccourci (panneau actif) : ${shortcutLabel} · Échap : arrêt immédiat du micro`) : null),
-    h('section', { class: 'card' }, h('h3', {}, 'Transcription'), transcriptArea),
+    h('section', { class: 'card' }, h('h2', {}, 'Transcription'), transcriptArea),
     editArea,
   );
   session.onChange(render);

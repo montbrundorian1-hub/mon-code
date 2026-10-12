@@ -45,7 +45,9 @@ export function mountApp(root: HTMLElement, ctx: AppContext, opts: { dialogMode?
   const views = new Map<TabId, HTMLElement>();
   const main = h('main', { class: 'content', id: 'content' });
   const nav = h('nav', { class: 'tabs', 'aria-label': 'Sections' });
-  const micBadge = h('div', { class: 'mic-badge', role: 'status', 'aria-live': 'assertive' });
+  const micBadge = h('section', { class: 'mic-badge', 'aria-label': 'État du micro', role: 'region' });
+  // Outils secondaires (Modèles, Diagnostic, Aide) : icônes dans l'en-tête, toujours visibles.
+  const tools = h('div', { class: 'header-tools', role: 'group', 'aria-label': 'Outils' });
   const aiBadge = h('span', { class: 'badge' });
   const modeBadge = h('span', { class: 'badge' });
   let currentTab: TabId = 'dicter';
@@ -71,7 +73,7 @@ export function mountApp(root: HTMLElement, ctx: AppContext, opts: { dialogMode?
     currentTab = tab;
     if (!views.has(tab)) views.set(tab, factories[tab]());
     replace(main, views.get(tab)!);
-    nav.querySelectorAll('button').forEach((b) => {
+    root.querySelectorAll<HTMLButtonElement>('button.tab').forEach((b) => {
       const active = b.dataset.tab === tab;
       b.classList.toggle('active', active);
       b.setAttribute('aria-current', active ? 'page' : 'false');
@@ -85,18 +87,27 @@ export function mountApp(root: HTMLElement, ctx: AppContext, opts: { dialogMode?
 
   for (const t of TABS) {
     if (opts.dialogMode && t.id !== 'dicter' && t.id !== 'modeles' && t.id !== 'aide') continue;
-    nav.append(
-      h('button', { type: 'button', class: `tab ${t.secondary ? 'secondary' : ''}`, dataset: { tab: t.id }, onclick: () => navigate(t.id), title: t.label }, icon(t.icon), h('span', { class: 'tab-label' }, t.label)),
+    const btn = h(
+      'button',
+      { type: 'button', class: `tab ${t.secondary ? 'secondary' : ''}`, dataset: { tab: t.id }, onclick: () => navigate(t.id), title: t.label },
+      icon(t.icon),
+      h('span', { class: t.secondary ? 'tab-label sr-only' : 'tab-label' }, t.label),
     );
+    (t.secondary ? tools : nav).append(btn);
   }
 
+  let micShown: boolean | null = null;
   const renderBadges = () => {
     const active = ctx.micActive();
-    replace(
-      micBadge,
-      active ? h('span', { class: 'mic-on' }, h('span', { class: 'rec-dot' }), 'Micro actif', button('Arrêter', () => ctx.stopAllMic(), { kind: 'danger', icon: 'stop' })) : null,
-    );
-    micBadge.hidden = !active;
+    // Ne reconstruit le bandeau que lors d'un changement d'état (pas à chaque tic du chronomètre).
+    if (active !== micShown) {
+      micShown = active;
+      replace(
+        micBadge,
+        active ? h('span', { class: 'mic-on', role: 'status' }, h('span', { class: 'rec-dot' }), 'Micro actif', button('Arrêter le micro', () => ctx.stopAllMic(), { kind: 'danger', icon: 'stop' })) : null,
+      );
+      micBadge.hidden = !active;
+    }
     const llm = ctx.llm.state;
     aiBadge.className = `badge ${llm.status === 'ready' ? 'badge-ok' : llm.status === 'downloading' || llm.status === 'loading' ? 'badge-busy' : ''}`;
     aiBadge.textContent =
@@ -136,7 +147,7 @@ export function mountApp(root: HTMLElement, ctx: AppContext, opts: { dialogMode?
       notice,
       h(
         'div',
-        { class: 'alert alert-info notice' },
+        { class: 'alert alert-info notice', role: 'region', 'aria-label': 'Avertissement de confidentialité' },
         h('strong', {}, 'Prototype — données fictives uniquement. '),
         'Traitement local, aucun envoi automatique. Une IA locale ne vaut pas autorisation de traiter des données de patients : n’utilisez des contenus réels qu’avec l’accord de votre établissement.',
         button(
@@ -156,7 +167,7 @@ export function mountApp(root: HTMLElement, ctx: AppContext, opts: { dialogMode?
     h(
       'header',
       { class: 'app-header' },
-      h('div', { class: 'brand' }, h('span', { class: 'logo', 'aria-hidden': 'true' }, icon('mic')), h('span', {}, opts.dialogMode ? 'Dictée — fenêtre séparée' : APP_NAME)),
+      h('div', { class: 'header-row' }, h('h1', { class: 'brand' }, h('span', { class: 'logo', 'aria-hidden': 'true' }, icon('mic')), h('span', {}, opts.dialogMode ? 'Dictée — fenêtre séparée' : APP_NAME)), tools),
       h('div', { class: 'badges' }, modeBadge, aiBadge, demoSwitch),
     ),
     micBadge,

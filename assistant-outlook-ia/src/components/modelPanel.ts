@@ -19,12 +19,12 @@ export function modelPanel(ctx: AppContext, family: ModelFamily, opts: { compact
     const caps = ctx.caps;
     const title = family === 'asr' ? 'Transcription vocale locale' : 'Rédaction par IA locale (expérimental)';
     if (!caps) {
-      replace(root, h('h3', {}, title), h('p', { class: 'muted' }, 'Analyse des capacités du poste…'));
+      replace(root, h('h2', {}, title), h('p', { class: 'muted' }, 'Analyse des capacités du poste…'));
       return;
     }
     const options = recommend(family, caps);
     const s = handle.state;
-    const header = h('h3', {}, title);
+    const header = h('h2', {}, title);
 
     if (s.status === 'ready') {
       replace(

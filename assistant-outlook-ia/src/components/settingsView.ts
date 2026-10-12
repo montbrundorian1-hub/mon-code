@@ -29,7 +29,7 @@ export function settingsView(ctx: AppContext): HTMLElement {
     const tier = hardwareTier(c);
     replace(
       hw,
-      h('h3', {}, 'Profil du poste'),
+      h('h2', {}, 'Profil du poste'),
       h(
         'ul',
         { class: 'kv' },
@@ -103,7 +103,7 @@ export function settingsView(ctx: AppContext): HTMLElement {
     h(
       'section',
       { class: 'card' },
-      h('h3', {}, 'Cache et source des modèles'),
+      h('h2', {}, 'Cache et source des modèles'),
       h('label', { class: 'inline' }, cacheBox, ' Conserver les modèles téléchargés dans le cache du navigateur'),
       h('p', { class: 'muted small' }, 'Évite de retélécharger à chaque session. Déconseillé sur un poste partagé : le cache du navigateur n’est pas un stockage privé garanti. Il ne contient jamais de dictée ni de mail.'),
       cacheInfo,
@@ -122,7 +122,7 @@ export function settingsView(ctx: AppContext): HTMLElement {
     h(
       'section',
       { class: 'card' },
-      h('h3', {}, 'Dictée'),
+      h('h2', {}, 'Dictée'),
       h('label', { class: 'block' }, 'Raccourci micro (actif quand le panneau a le focus) : ', shortcutSel),
       h('label', { class: 'inline' }, punctBox, ' Interpréter « virgule », « point à la ligne », « nouveau paragraphe »… comme de la ponctuation'),
     ),
