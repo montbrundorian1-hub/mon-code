@@ -263,6 +263,16 @@ export class OfficeMailHost implements MailHost {
     }
   }
 
+  userDisplayName(): string | null {
+    try {
+      // userProfile : Mailbox 1.1 (lecture et rédaction). Utilisé uniquement pour saluer l'utilisateur.
+      const profile = (Office.context?.mailbox as unknown as { userProfile?: { displayName?: string } } | undefined)?.userProfile;
+      return typeof profile?.displayName === 'string' && profile.displayName.trim() ? profile.displayName.trim() : null;
+    } catch {
+      return null;
+    }
+  }
+
   onItemChanged(cb: () => void): void {
     const mb = Office.context?.mailbox;
     if (!mb || typeof mb.addHandlerAsync !== 'function' || !this.info().mailboxSets['1.5']) return;

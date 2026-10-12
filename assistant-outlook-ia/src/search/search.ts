@@ -153,6 +153,30 @@ function tokens(s: string): string[] {
   return (stripAccents(s.toLowerCase()).match(/[a-z0-9]+/g) ?? []).map(stem);
 }
 
+/** Segment d'affichage : texte simple ou mot à mettre en évidence. */
+export interface HighlightPart {
+  text: string;
+  mark: boolean;
+}
+
+/**
+ * Découpe un texte pour mettre en évidence les mots retrouvés (même règle que la recherche :
+ * mot identique après racinisation, ou début de mot pour les termes d'au moins 5 lettres).
+ */
+export function highlightParts(text: string, matched: string[]): HighlightPart[] {
+  if (!matched.length) return [{ text, mark: false }];
+  const parts: HighlightPart[] = [];
+  for (const piece of text.split(/([\p{L}\p{N}]+)/u)) {
+    if (!piece) continue;
+    const words = stripAccents(piece.toLowerCase()).match(/[a-z0-9]+/g);
+    const hit = !!words && words.length === 1 && matched.some((t) => stem(words[0]) === t || (t.length >= 5 && stem(words[0]).startsWith(t)));
+    const last = parts[parts.length - 1];
+    if (last && last.mark === hit && !hit) last.text += piece;
+    else parts.push({ text: piece, mark: hit });
+  }
+  return parts;
+}
+
 function snippet(body: string, terms: string[]): string {
   const flat = body.replace(/\s+/g, ' ');
   const norm = stripAccents(flat.toLowerCase());

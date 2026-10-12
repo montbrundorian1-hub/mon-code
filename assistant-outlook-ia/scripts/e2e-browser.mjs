@@ -100,7 +100,10 @@ try {
   await page.getByRole('button', { name: 'J’ai compris' }).click();
   await page.waitForSelector('.model-panel .model-option', { timeout: 30000 });
   const label = { 'whisper-small': 'Whisper small', 'whisper-base': 'Whisper base', 'whisper-tiny': 'Whisper tiny' }[ASR];
-  await page.locator('.model-panel .model-option', { hasText: label }).locator('input').check();
+  const option = page.locator('.model-panel .model-option', { hasText: label });
+  // Panneau compact : les modèles autres que le recommandé sont repliés sous « Autres modèles ».
+  if (!(await option.isVisible())) await page.locator('.model-panel .more-models summary').click();
+  await option.locator('input').check();
   const loadBtn = page.locator('.model-panel button.btn-primary');
   check('Téléchargement impossible sans consentement', await loadBtn.isDisabled());
   await page.locator('.model-panel .consent input').check();
@@ -148,12 +151,12 @@ try {
   await page.getByRole('tab', { name: 'Version rédigée' }).click();
 
   // 5. Commande de modification
-  await page.locator('.cmd-input').first().fill('transforme en liste');
-  await page.locator('.cmd-input').first().press('Enter');
+  await page.locator('textarea[aria-label="Consigne de modification"]').fill('transforme en liste');
+  await page.locator('textarea[aria-label="Consigne de modification"]').press('Enter');
   await page.waitForTimeout(500);
   const listed = await page.locator('textarea[aria-label="Version rédigée (modifiable)"]').inputValue();
   check('Commande « transforme en liste »', /\n- /.test(listed));
-  await page.getByRole('button', { name: 'Annuler' }).click();
+  await page.locator('#btn-undo').click();
   await page.waitForTimeout(300);
   check('Annuler restaure la version précédente', (await page.locator('textarea[aria-label="Version rédigée (modifiable)"]').inputValue()) === mail);
 
@@ -178,9 +181,9 @@ try {
     check(`Chargement du modèle de rédaction ${LLM}`, ok, `${Math.round((Date.now() - tL) / 1000)} s`);
     if (ok) {
       await page.locator('.tab', { hasText: 'Rédiger' }).click();
-      await page.locator('.view-rediger label.inline input[type=checkbox]').check();
+      await page.locator('.view-rediger .ai-toggle').click();
       const tG = Date.now();
-      await page.locator('#btn-redact').click();
+      await page.getByRole('button', { name: 'Régénérer depuis le texte d’origine' }).click();
       await page.waitForFunction(() => document.querySelector('.view-rediger .busy')?.hasAttribute('hidden'), null, { timeout: 30 * 60000 });
       const aiMail = await page.locator('textarea[aria-label="Version rédigée (modifiable)"]').inputValue();
       const engine = await page.locator('.validation').innerText();
@@ -213,7 +216,8 @@ try {
   await page.locator('.tab', { hasText: 'Diagnostic' }).click();
   await page.waitForSelector('.check', { timeout: 20000 });
   await page.waitForTimeout(1500);
-  const diag = await page.locator('.view-diagnostic').innerText();
+  // textContent : inclut les groupes repliés (détails sans anomalie).
+  const diag = (await page.locator('.view-diagnostic').textContent()) ?? '';
   writeFileSync(join(SHOTS, 'diagnostic.txt'), diag);
   check('Page de diagnostic', /WebAssembly/.test(diag));
   await shot('12-diagnostic');

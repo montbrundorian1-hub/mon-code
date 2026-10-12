@@ -94,4 +94,9 @@ export class DemoMailHost implements MailHost {
   onItemChanged(cb: () => void): void {
     this.listeners.add(cb);
   }
+
+  /** Démonstration : pas de nom (salutation neutre). */
+  userDisplayName(): string | null {
+    return null;
+  }
 }

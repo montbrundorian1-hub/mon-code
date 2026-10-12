@@ -52,4 +52,6 @@ export interface MailHost {
   openReplyForm(text: string): Promise<InsertResult>;
   /** Notifié quand l'utilisateur change de message (panneau épinglé, Mailbox 1.5). */
   onItemChanged(cb: () => void): void;
+  /** Nom d'affichage de l'utilisateur (salutation locale uniquement ; jamais stocké ni transmis). */
+  userDisplayName(): string | null;
 }

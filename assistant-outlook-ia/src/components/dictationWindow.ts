@@ -19,6 +19,11 @@ function dialogUrl(): string {
   return u.href;
 }
 
+/** Message attendu entre la fenêtre de dictée et le panneau (tout autre contenu est ignoré). */
+function isDictationPayload(d: unknown): d is { type: typeof MSG_TYPE; text: string } {
+  return typeof d === 'object' && d !== null && (d as { type?: unknown }).type === MSG_TYPE && typeof (d as { text?: unknown }).text === 'string';
+}
+
 function receiveText(ctx: AppContext, text: string): void {
   if (typeof text !== 'string' || !text.trim()) return;
   ctx.draft.source = text.slice(0, 20000);
@@ -43,8 +48,8 @@ export function openDictationWindow(ctx: AppContext): void {
         // Origine exigée et identique (DialogApi 1.2+ la fournit) ; sinon, seul notre propre dialogue peut émettre ce message.
         if (a.origin !== undefined && a.origin !== location.origin) return;
         try {
-          const data = JSON.parse(a.message ?? '{}');
-          if (data.type === MSG_TYPE) receiveText(ctx, data.text);
+          const data: unknown = JSON.parse(a.message ?? '{}');
+          if (isDictationPayload(data)) receiveText(ctx, data.text);
         } catch {
           /* message ignoré */
         }
@@ -62,9 +67,9 @@ function openPopup(ctx: AppContext): void {
     toast('Le navigateur a bloqué la fenêtre. Autorisez les fenêtres contextuelles pour ce site.', 'error', 7000);
     return;
   }
-  const onMessage = (ev: MessageEvent) => {
+  const onMessage = (ev: MessageEvent<unknown>) => {
     if (ev.origin !== location.origin || ev.source !== w) return;
-    if (ev.data?.type === MSG_TYPE) {
+    if (isDictationPayload(ev.data)) {
       receiveText(ctx, ev.data.text);
       window.removeEventListener('message', onMessage);
       w.close();

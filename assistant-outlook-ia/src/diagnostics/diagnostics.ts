@@ -6,7 +6,7 @@
  * - Le rapport copiable ne contient que des informations techniques.
  */
 
-import { APP_VERSION } from '../config';
+import { APP_VERSION, OFFICE_JS_URL } from '../config';
 import { hardwareTier, type Capabilities } from '../ai/models';
 import { policyAllowsMicrophone } from '../audio/micCapture';
 import { getBlockedCount, summarizeGuard } from '../security/networkGuard';
@@ -76,7 +76,17 @@ export async function runDiagnostics(boot: BootResult): Promise<Check[]> {
     label: 'Bibliothèque Office.js',
     status: boot.officeScriptLoaded ? 'ok' : 'warn',
     value: boot.officeScriptLoaded ? 'chargée' : 'non chargée',
-    detail: boot.officeScriptLoaded ? undefined : 'Hors Outlook ou CDN Microsoft inaccessible : mode démonstration.',
+    detail: boot.officeScriptLoaded
+      ? `Source : ${new URL(OFFICE_JS_URL).host} (CDN officiel actuel de Microsoft).`
+      : 'Hors Outlook ou CDN Microsoft inaccessible : mode démonstration.',
+  });
+  checks.push({
+    id: 'office-context',
+    group: 'Outlook',
+    label: 'Ouverture par Outlook',
+    status: boot.officeContext ? 'ok' : 'info',
+    value: boot.officeContext ? 'oui (panneau ou fenêtre de dialogue)' : 'non (ouverture directe)',
+    detail: boot.officeContext ? undefined : 'Ouverture directe dans le navigateur : la démonstration démarre immédiatement, sans attendre Office.js.',
   });
   checks.push({
     id: 'office-host',
@@ -231,9 +241,10 @@ export async function runDiagnostics(boot: BootResult): Promise<Check[]> {
     id: 'native-sr',
     group: 'IA locale',
     label: 'Reconnaissance vocale native locale (fr-FR)',
-    status: native === 'available' ? 'ok' : 'info',
+    status: 'info',
     value: { available: 'disponible', downloadable: 'téléchargeable', 'unavailable-fr': 'français non pris en charge', 'api-absent': 'API absente' }[native],
-    detail: 'La reconnaissance « cloud » d’Edge n’est jamais utilisée.',
+    detail:
+      'Information seulement : la dictée utilise Whisper, exécuté sur ce poste. Constat du 12/10/2026 : Edge ne propose pas le français en local. La reconnaissance « cloud » des navigateurs n’est jamais utilisée.',
   });
 
   // --- Sécurité ---

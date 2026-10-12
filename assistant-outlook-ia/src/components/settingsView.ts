@@ -1,12 +1,12 @@
 /**
- * Onglet « Modèles » : profil matériel, chargement des modèles, cache, source, raccourci.
+ * Onglet « Modèles » : modèles locaux (dictée, rédaction), préférences, détails techniques du poste.
  */
 
 import { hardwareTier } from '../ai/models';
 import { MODEL_CACHE_NAME } from '../config';
 import { loadSettings, updateSettings, type ModelSource, type ShortcutId } from '../security/settings';
 import type { AppContext } from '../ui/context';
-import { button, h, replace, toast } from '../ui/dom';
+import { button, h, icon, replace, switchControl, toast } from '../ui/dom';
 import { modelPanel } from './modelPanel';
 
 export async function clearModelCache(): Promise<boolean> {
@@ -18,9 +18,11 @@ export async function clearModelCache(): Promise<boolean> {
   }
 }
 
+const TIER_LABEL = { gpu: 'Carte graphique disponible', 'cpu-confort': 'Processeur confortable', 'cpu-modeste': 'Processeur modeste', insuffisant: 'Insuffisant pour l’IA locale' } as const;
+
 export function settingsView(ctx: AppContext): HTMLElement {
   const root = h('div', { class: 'view view-modeles' });
-  const hw = h('section', { class: 'card' });
+  const hw = h('div', { class: 'hw' });
   const cacheInfo = h('p', { class: 'muted small' });
 
   const renderHw = () => {
@@ -29,7 +31,7 @@ export function settingsView(ctx: AppContext): HTMLElement {
     const tier = hardwareTier(c);
     replace(
       hw,
-      h('h2', {}, 'Profil du poste'),
+      h('p', { class: 'hw-tier' }, icon('cpu'), h('strong', {}, TIER_LABEL[tier])),
       h(
         'ul',
         { class: 'kv' },
@@ -37,9 +39,9 @@ export function settingsView(ctx: AppContext): HTMLElement {
         h('li', {}, h('span', {}, 'WebAssembly SIMD'), h('strong', {}, c.wasmSimd ? 'oui' : 'non')),
         h('li', {}, h('span', {}, 'Mémoire déclarée'), h('strong', {}, c.memoryGB ? `≥ ${c.memoryGB} Go` : 'inconnue')),
         h('li', {}, h('span', {}, 'Cœurs logiques'), h('strong', {}, c.cores ? String(c.cores) : 'inconnu')),
-        h('li', {}, h('span', {}, 'Profil'), h('strong', {}, { gpu: 'Carte graphique', 'cpu-confort': 'Processeur confortable', 'cpu-modeste': 'Processeur modeste', insuffisant: 'Insuffisant' }[tier])),
+        c.gpuInfo ? h('li', {}, h('span', {}, 'Adaptateur graphique'), h('strong', {}, c.gpuInfo)) : null,
       ),
-      h('p', { class: 'muted small' }, 'Les recommandations ci-dessous en découlent. La mémoire réelle n’est pas mesurable de façon fiable par une page web.'),
+      h('p', { class: 'muted small' }, 'Les recommandations de modèles en découlent. La mémoire réelle n’est pas mesurable de façon fiable par une page web.'),
     );
   };
 
@@ -58,18 +60,10 @@ export function settingsView(ctx: AppContext): HTMLElement {
   };
 
   const s = loadSettings();
-  const cacheBox = h('input', {
-    type: 'checkbox',
-    checked: s.cacheModels,
-    onchange: (e: Event) => {
-      updateSettings({ cacheModels: (e.target as HTMLInputElement).checked });
-      toast('Préférence enregistrée. Elle s’applique au prochain chargement de modèle.', 'info');
-    },
-  });
   const sourceSel = h(
     'select',
     {
-      'aria-label': 'Source des modèles',
+      id: 'set-source',
       onchange: (e: Event) => updateSettings({ modelSource: (e.target as HTMLSelectElement).value as ModelSource }),
     },
     h('option', { value: 'huggingface', selected: s.modelSource === 'huggingface' }, 'Hugging Face (huggingface.co)'),
@@ -78,7 +72,7 @@ export function settingsView(ctx: AppContext): HTMLElement {
   const shortcutSel = h(
     'select',
     {
-      'aria-label': 'Raccourci du micro',
+      id: 'set-shortcut',
       onchange: (e: Event) => updateSettings({ shortcut: (e.target as HTMLSelectElement).value as ShortcutId }),
     },
     ...(
@@ -90,42 +84,66 @@ export function settingsView(ctx: AppContext): HTMLElement {
       ] as const
     ).map(([v, l]) => h('option', { value: v, selected: s.shortcut === v }, l)),
   );
-  const punctBox = h('input', {
-    type: 'checkbox',
-    checked: s.dictatedPunctuation,
-    onchange: (e: Event) => updateSettings({ dictatedPunctuation: (e.target as HTMLInputElement).checked }),
-  });
 
   root.append(
-    hw,
+    h(
+      'section',
+      { class: 'hero compact' },
+      h('h2', { class: 'hero-title' }, 'Modèles et réglages'),
+      h('p', { class: 'hero-sub' }, 'Tout fonctionne sur ce poste. Activez seulement ce dont vous avez besoin.'),
+    ),
     modelPanel(ctx, 'asr'),
     modelPanel(ctx, 'llm'),
     h(
       'section',
       { class: 'card' },
-      h('h2', {}, 'Cache et source des modèles'),
-      h('label', { class: 'inline' }, cacheBox, ' Conserver les modèles téléchargés dans le cache du navigateur'),
-      h('p', { class: 'muted small' }, 'Évite de retélécharger à chaque session. Déconseillé sur un poste partagé : le cache du navigateur n’est pas un stockage privé garanti. Il ne contient jamais de dictée ni de mail.'),
-      cacheInfo,
-      button(
-        'Vider le cache des modèles',
-        async () => {
-          const ok = await clearModelCache();
-          toast(ok ? 'Cache des modèles vidé.' : 'Aucun cache à vider.', 'info');
-          void refreshCache();
-        },
-        { kind: 'ghost' },
+      h('div', { class: 'card-head' }, h('h2', {}, 'Préférences')),
+      h(
+        'div',
+        { class: 'settings-list' },
+        switchControl(
+          'Ponctuation dictée',
+          s.dictatedPunctuation,
+          (v) => {
+            updateSettings({ dictatedPunctuation: v });
+            toast(v ? 'Les mots « virgule », « à la ligne »… deviendront de la ponctuation.' : 'Les mots « virgule », « à la ligne »… seront conservés tels quels.', 'info');
+          },
+          { hint: '« virgule », « point à la ligne », « nouveau paragraphe »… deviennent de la ponctuation.' },
+        ),
+        switchControl(
+          'Garder les modèles en cache',
+          s.cacheModels,
+          (v) => {
+            updateSettings({ cacheModels: v });
+            toast('Préférence enregistrée. Elle s’applique au prochain chargement de modèle.', 'info');
+          },
+          { hint: 'Évite de retélécharger à chaque session. Déconseillé sur un poste partagé. Ne contient jamais de dictée ni de mail.' },
+        ),
+        h(
+          'div',
+          { class: 'cache-row' },
+          cacheInfo,
+          button(
+            'Vider le cache',
+            async () => {
+              const ok = await clearModelCache();
+              toast(ok ? 'Cache des modèles vidé.' : 'Aucun cache à vider.', 'info');
+              void refreshCache();
+            },
+            { kind: 'ghost', icon: 'trash', size: 'sm' },
+          ),
+        ),
+        h('div', { class: 'field' }, h('label', { for: 'set-shortcut' }, 'Raccourci du micro'), shortcutSel, h('p', { class: 'field-hint' }, 'Actif quand le panneau a le focus. Échap coupe toujours le micro.')),
+        h(
+          'div',
+          { class: 'field' },
+          h('label', { for: 'set-source' }, 'Source des modèles'),
+          sourceSel,
+          h('p', { class: 'field-hint' }, 'Auto-hébergé : déposez les fichiers des modèles dans le dossier models/ du site (voir docs/DEPLOYMENT.md). Aucun accès à huggingface.co n’est alors nécessaire.'),
+        ),
       ),
-      h('label', { class: 'block' }, 'Source : ', sourceSel),
-      h('p', { class: 'muted small' }, 'Auto-hébergé : déposez les fichiers des modèles dans le dossier models/ du site (voir docs/DEPLOYMENT.md). Aucun accès à huggingface.co n’est alors nécessaire.'),
     ),
-    h(
-      'section',
-      { class: 'card' },
-      h('h2', {}, 'Dictée'),
-      h('label', { class: 'block' }, 'Raccourci micro (actif quand le panneau a le focus) : ', shortcutSel),
-      h('label', { class: 'inline' }, punctBox, ' Interpréter « virgule », « point à la ligne », « nouveau paragraphe »… comme de la ponctuation'),
-    ),
+    h('details', { class: 'card disclosure' }, h('summary', {}, icon('cpu'), h('span', {}, 'Détails techniques du poste')), hw),
   );
   renderHw();
   void refreshCache();

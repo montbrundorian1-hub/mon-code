@@ -2,10 +2,12 @@
  * Moteurs de transcription. Tous sont LOCAUX : aucun service distant n'est utilisé.
  *
  * - WhisperEngine : Whisper multilingue via Transformers.js (WASM ou WebGPU), par segments.
- * - Reconnaissance native Edge « processLocally » : utilisable seulement si le navigateur
- *   déclare le français disponible EN LOCAL. Ce n'est pas le cas en octobre 2026 (Edge
- *   Canary/Dev ≥ 150 : en, de, it, pt, es, ko). La reconnaissance vocale « cloud » d'Edge
- *   n'est jamais utilisée.
+ * - Reconnaissance native « processLocally » (Web Speech API) : utilisable seulement si le
+ *   navigateur déclare le français disponible EN LOCAL. Vérifié le 12/10/2026
+ *   (docs/PISTE_RECONNAISSANCE_NATIVE.md) : Edge 155 et 157 répondent « unavailable » pour fr-FR,
+ *   même avec l'option expérimentale activée ; Chrome 155 installe un moteur local (SODA) mais
+ *   n'est pas le navigateur du CHU. Whisper reste donc le moteur utilisé. La reconnaissance
+ *   vocale « cloud » des navigateurs n'est jamais utilisée.
  */
 
 import type { ModelHandle } from '../ai/modelLoader';

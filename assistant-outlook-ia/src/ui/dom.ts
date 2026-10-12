@@ -3,6 +3,10 @@
  * Tout texte est inséré via textContent : pas d'injection HTML possible.
  */
 
+import { icon, type IconName } from './icons';
+
+export { icon, type IconName } from './icons';
+
 type Child = Node | string | number | null | undefined | false;
 type Props = Record<string, unknown> & {
   class?: string;
@@ -46,47 +50,51 @@ export function replace(el: Element, ...children: Child[]): void {
   append(el, children);
 }
 
-export function icon(name: 'mic' | 'stop' | 'pause' | 'play' | 'reset' | 'copy' | 'insert' | 'send' | 'search' | 'gear' | 'pulse' | 'check' | 'warn' | 'x' | 'info' | 'undo' | 'chat' | 'external'): SVGSVGElement {
-  const paths: Record<string, string> = {
-    mic: 'M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2Z',
-    stop: 'M7 7h10v10H7z',
-    pause: 'M7 5h4v14H7zM13 5h4v14h-4z',
-    play: 'M8 5v14l11-7z',
-    reset: 'M12 5V2L7 6l5 4V7a5 5 0 1 1-5 5H5a7 7 0 1 0 7-7Z',
-    copy: 'M16 1H4a2 2 0 0 0-2 2v14h2V3h12V1Zm3 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2Zm0 16H8V7h11v14Z',
-    insert: 'M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2Zm-6 14h-2v-4H7v-2h4V7h2v4h4v2h-4v4Z',
-    send: 'M2 21 23 12 2 3v7l15 2-15 2z',
-    search: 'M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16a6.47 6.47 0 0 0 4.23-1.57l.27.28v.79l5 5L20.49 19l-4.99-5Zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14Z',
-    gear: 'M19.4 13a7.5 7.5 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7.4 7.4 0 0 0-1.7-1L15 3h-4l-.4 2.9a7.4 7.4 0 0 0-1.7 1l-2.5-1-2 3.5L6.6 11a7.5 7.5 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1c.5.4 1.1.7 1.7 1L11 21h4l.4-2.9c.6-.3 1.2-.6 1.7-1l2.5 1 2-3.5L19.4 13ZM13 15.5A3.5 3.5 0 1 1 16.5 12 3.5 3.5 0 0 1 13 15.5Z',
-    pulse: 'M3 12h4l3-8 4 16 3-8h4',
-    check: 'M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z',
-    warn: 'M1 21h22L12 2 1 21Zm12-3h-2v-2h2v2Zm0-4h-2v-4h2v4Z',
-    x: 'M19 6.4 17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12z',
-    info: 'M11 7h2v2h-2zm0 4h2v6h-2zm1-9a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8Z',
-    undo: 'M12.5 8c-2.65 0-5.05 1-6.9 2.6L2 7v9h9l-3.62-3.62A7.98 7.98 0 0 1 20.36 15l2.37-.78A10.5 10.5 0 0 0 12.5 8Z',
-    chat: 'M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2Z',
-    external: 'M14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7ZM19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7Z',
-  };
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.setAttribute('viewBox', '0 0 24 24');
-  svg.setAttribute('aria-hidden', 'true');
-  svg.classList.add('icon');
-  const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-  p.setAttribute('d', paths[name]);
-  if (name === 'pulse') {
-    p.setAttribute('fill', 'none');
-    p.setAttribute('stroke', 'currentColor');
-    p.setAttribute('stroke-width', '2');
-  }
-  svg.append(p);
-  return svg;
-}
+export type ButtonKind = 'primary' | 'secondary' | 'ghost' | 'danger' | 'accent' | 'link';
 
-export function button(label: string | Node, onClick: (ev: MouseEvent) => void, opts: { kind?: 'primary' | 'secondary' | 'ghost' | 'danger'; icon?: Parameters<typeof icon>[0]; title?: string; disabled?: boolean; id?: string } = {}): HTMLButtonElement {
-  const b = h('button', { type: 'button', class: `btn btn-${opts.kind ?? 'secondary'}`, title: opts.title, id: opts.id }, opts.icon ? icon(opts.icon) : null, label);
+export function button(
+  label: string | Node,
+  onClick: (ev: MouseEvent) => void,
+  opts: { kind?: ButtonKind; icon?: IconName; title?: string; disabled?: boolean; id?: string; size?: 'sm' | 'lg'; class?: string } = {},
+): HTMLButtonElement {
+  const cls = ['btn', `btn-${opts.kind ?? 'secondary'}`, opts.size ? `btn-${opts.size}` : '', opts.class ?? ''].filter(Boolean).join(' ');
+  const b = h('button', { type: 'button', class: cls, title: opts.title, id: opts.id }, opts.icon ? icon(opts.icon) : null, typeof label === 'string' ? h('span', { class: 'btn-label' }, label) : label);
   b.disabled = !!opts.disabled;
   b.addEventListener('click', onClick);
   return b;
+}
+
+/** Bouton icône seule : le libellé reste annoncé (aria-label) et affiché en info-bulle. */
+export function iconButton(
+  label: string,
+  name: IconName,
+  onClick: (ev: MouseEvent) => void,
+  opts: { id?: string; disabled?: boolean; class?: string; pressed?: boolean; filled?: boolean } = {},
+): HTMLButtonElement {
+  const b = h('button', { type: 'button', class: `icon-btn${opts.class ? ` ${opts.class}` : ''}`, 'aria-label': label, title: label, id: opts.id }, icon(name, { filled: opts.filled }));
+  if (opts.pressed !== undefined) b.setAttribute('aria-pressed', String(opts.pressed));
+  b.disabled = !!opts.disabled;
+  b.addEventListener('click', onClick);
+  return b;
+}
+
+/** Interrupteur accessible (case à cocher présentée en bascule, rôle « switch »). */
+export function switchControl(
+  label: string,
+  checked: boolean,
+  onChange: (checked: boolean) => void,
+  opts: { disabled?: boolean; hint?: string; class?: string } = {},
+): HTMLLabelElement & { input: HTMLInputElement } {
+  const input = h('input', { type: 'checkbox', role: 'switch', class: 'switch-input', checked, disabled: !!opts.disabled });
+  input.addEventListener('change', () => onChange(input.checked));
+  const lab = h(
+    'label',
+    { class: `switch${opts.class ? ` ${opts.class}` : ''}` },
+    input,
+    h('span', { class: 'switch-track', 'aria-hidden': 'true' }, h('span', { class: 'switch-thumb' })),
+    h('span', { class: 'switch-text' }, h('span', { class: 'switch-label' }, label), opts.hint ? h('span', { class: 'switch-hint' }, opts.hint) : null),
+  );
+  return Object.assign(lab, { input });
 }
 
 export function formatDuration(ms: number): string {
@@ -96,13 +104,26 @@ export function formatDuration(ms: number): string {
 
 let toastHost: HTMLElement | null = null;
 export function toast(message: string, kind: 'ok' | 'error' | 'info' = 'info', ms = 4000): void {
-  if (!toastHost) {
+  if (!toastHost?.isConnected) {
     toastHost = h('section', { class: 'toasts', role: 'region', 'aria-label': 'Notifications', 'aria-live': 'polite' });
     document.body.append(toastHost);
   }
-  const t = h('div', { class: `toast toast-${kind}` }, icon(kind === 'ok' ? 'check' : kind === 'error' ? 'warn' : 'info'), message);
+  const t = h('div', { class: `toast toast-${kind}` }, icon(kind === 'ok' ? 'check-circle' : kind === 'error' ? 'warn' : 'info'), h('span', {}, message));
   toastHost.append(t);
   setTimeout(() => t.remove(), ms);
+}
+
+let announcer: HTMLElement | null = null;
+/** Annonce discrète pour les lecteurs d'écran (zone « live » invisible). */
+export function announce(message: string): void {
+  if (!announcer?.isConnected) {
+    announcer = h('div', { class: 'sr-only', role: 'status', 'aria-live': 'polite', 'aria-atomic': 'true' });
+    document.body.append(announcer);
+  }
+  const target = announcer;
+  target.textContent = '';
+  // Léger délai : garantit la lecture, même si le message est identique au précédent.
+  setTimeout(() => (target.textContent = message), 30);
 }
 
 export async function copyText(text: string): Promise<boolean> {
@@ -130,4 +151,18 @@ export async function copyText(text: string): Promise<boolean> {
 export function autoRows(text: string, min = 4, max = 18, charsPerLine = 46): number {
   const lines = text.split('\n').reduce((n, l) => n + Math.max(1, Math.ceil(l.length / charsPerLine)), 0);
   return Math.max(min, Math.min(max, lines + 1));
+}
+
+/** Zone de saisie qui s'agrandit avec son contenu (jusqu'à `maxPx`), comme une messagerie. */
+export function autoGrow(ta: HTMLTextAreaElement, maxPx = 220): () => void {
+  const fit = () => {
+    if (!ta.isConnected) return;
+    ta.style.height = 'auto';
+    const next = Math.min(maxPx, ta.scrollHeight);
+    if (next > 0) ta.style.height = `${next}px`;
+    ta.style.overflowY = ta.scrollHeight > maxPx ? 'auto' : 'hidden';
+  };
+  ta.addEventListener('input', fit);
+  requestAnimationFrame(fit);
+  return fit;
 }

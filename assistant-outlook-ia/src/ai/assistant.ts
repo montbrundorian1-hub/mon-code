@@ -204,13 +204,13 @@ export class Assistant {
     received: string,
     intentions: string,
     style: StyleContext,
-    opts: { useAi?: boolean; onToken?: (t: string) => void } = {},
+    opts: { useAi?: boolean; onToken?: (t: string) => void; dictatedPunctuation?: boolean } = {},
   ): Promise<DraftOutcome> {
     const resolved = resolveStyle({ ...style, isReply: true }, intentions);
     const allowed = style.recipients.map((r) => r.displayName);
     const trimmed = intentions.trim();
     const classicBody = trimmed
-      ? classicRewrite(trimmed, style, { addGreeting: false, addClosing: false })
+      ? classicRewrite(trimmed, style, { addGreeting: false, addClosing: false, dictatedPunctuation: opts.dictatedPunctuation })
       : { text: 'Merci pour votre message. [à compléter]', corrections: [], notes: [] };
     const hasGreeting = /^(bonjour|bonsoir|madame|monsieur|cher|chère)/i.test(classicBody.text);
     const classicText = [hasGreeting ? null : resolved.greeting, classicBody.text, resolved.closing].filter(Boolean).join('\n\n');

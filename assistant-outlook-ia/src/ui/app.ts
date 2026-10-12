@@ -16,16 +16,16 @@ import { registerCleanup } from '../security/sessionMemory';
 import { loadSettings, updateSettings } from '../security/settings';
 import { APP_NAME } from '../config';
 import type { AppContext, TabId } from './context';
-import { button, h, icon, replace, toast } from './dom';
+import { announce, button, formatDuration, h, icon, replace, toast, type IconName } from './dom';
 
-const TABS: Array<{ id: TabId; label: string; icon: Parameters<typeof icon>[0]; secondary?: boolean }> = [
+const TABS: Array<{ id: TabId; label: string; icon: IconName; secondary?: boolean }> = [
   { id: 'dicter', label: 'Dicter', icon: 'mic' },
-  { id: 'rediger', label: 'Rédiger', icon: 'insert' },
-  { id: 'repondre', label: 'Répondre', icon: 'chat' },
+  { id: 'rediger', label: 'Rédiger', icon: 'pencil' },
+  { id: 'repondre', label: 'Répondre', icon: 'reply' },
   { id: 'rechercher', label: 'Rechercher', icon: 'search' },
-  { id: 'modeles', label: 'Modèles', icon: 'gear', secondary: true },
-  { id: 'diagnostic', label: 'Diagnostic', icon: 'pulse', secondary: true },
-  { id: 'aide', label: 'Aide', icon: 'info', secondary: true },
+  { id: 'modeles', label: 'Modèles', icon: 'sliders', secondary: true },
+  { id: 'diagnostic', label: 'Diagnostic', icon: 'activity', secondary: true },
+  { id: 'aide', label: 'Aide', icon: 'help', secondary: true },
 ];
 
 export function matchesShortcut(e: KeyboardEvent, id: string): boolean {
@@ -43,13 +43,15 @@ export function matchesShortcut(e: KeyboardEvent, id: string): boolean {
 
 export function mountApp(root: HTMLElement, ctx: AppContext, opts: { dialogMode?: boolean } = {}): void {
   const views = new Map<TabId, HTMLElement>();
-  const main = h('main', { class: 'content', id: 'content' });
+  const main = h('main', { class: 'content', id: 'content', tabindex: '-1' });
   const nav = h('nav', { class: 'tabs', 'aria-label': 'Sections' });
-  const micBadge = h('section', { class: 'mic-badge', 'aria-label': 'État du micro', role: 'region' });
-  // Outils secondaires (Modèles, Diagnostic, Aide) : icônes dans l'en-tête, toujours visibles.
+  // Bandeau « micro actif » : dans l'en-tête collant, donc toujours visible, avec arrêt immédiat.
+  const micBadge = h('section', { class: 'mic-badge', 'aria-label': 'État du micro', role: 'region', hidden: true });
+  // Outils secondaires (Modèles, Diagnostic, Aide) : icônes dans l'en-tête, toujours accessibles.
   const tools = h('div', { class: 'header-tools', role: 'group', 'aria-label': 'Outils' });
   const aiBadge = h('span', { class: 'badge' });
   const modeBadge = h('span', { class: 'badge' });
+  const header = h('header', { class: 'app-header' });
   let currentTab: TabId = 'dicter';
 
   const factories: Record<TabId, () => HTMLElement> = {
@@ -70,15 +72,25 @@ export function mountApp(root: HTMLElement, ctx: AppContext, opts: { dialogMode?
   };
 
   const navigate = (tab: TabId) => {
+    const changed = tab !== currentTab;
     currentTab = tab;
-    if (!views.has(tab)) views.set(tab, factories[tab]());
-    replace(main, views.get(tab)!);
+    let view = views.get(tab);
+    if (!view) {
+      view = factories[tab]();
+      views.set(tab, view);
+    }
+    replace(main, view);
     root.querySelectorAll<HTMLButtonElement>('button.tab').forEach((b) => {
       const active = b.dataset.tab === tab;
       b.classList.toggle('active', active);
-      b.setAttribute('aria-current', active ? 'page' : 'false');
+      if (active) b.setAttribute('aria-current', 'page');
+      else b.removeAttribute('aria-current');
     });
-    main.focus({ preventScroll: true });
+    if (changed) {
+      document.scrollingElement?.scrollTo?.({ top: 0 });
+      main.focus({ preventScroll: true });
+      announce(`Section ${TABS.find((t) => t.id === tab)?.label ?? ''}`);
+    }
   };
   ctx.navigate = navigate;
 
@@ -89,14 +101,19 @@ export function mountApp(root: HTMLElement, ctx: AppContext, opts: { dialogMode?
     if (opts.dialogMode && t.id !== 'dicter' && t.id !== 'modeles' && t.id !== 'aide') continue;
     const btn = h(
       'button',
-      { type: 'button', class: `tab ${t.secondary ? 'secondary' : ''}`, dataset: { tab: t.id }, onclick: () => navigate(t.id), title: t.label },
+      { type: 'button', class: `tab${t.secondary ? ' secondary' : ''}`, dataset: { tab: t.id }, onclick: () => navigate(t.id), title: t.label },
       icon(t.icon),
       h('span', { class: t.secondary ? 'tab-label sr-only' : 'tab-label' }, t.label),
     );
     (t.secondary ? tools : nav).append(btn);
   }
+  if (opts.dialogMode) nav.classList.add('tabs-single');
 
   let micShown: boolean | null = null;
+  let lastAi = '';
+  let lastMode = '';
+  // Chronomètre visuel seulement (aria-hidden) : pas d'annonce répétée par les lecteurs d'écran.
+  const micTimer = h('span', { class: 'mic-timer', 'aria-hidden': 'true' });
   const renderBadges = () => {
     const active = ctx.micActive();
     // Ne reconstruit le bandeau que lors d'un changement d'état (pas à chaque tic du chronomètre).
@@ -104,80 +121,125 @@ export function mountApp(root: HTMLElement, ctx: AppContext, opts: { dialogMode?
       micShown = active;
       replace(
         micBadge,
-        active ? h('span', { class: 'mic-on', role: 'status' }, h('span', { class: 'rec-dot' }), 'Micro actif', button('Arrêter le micro', () => ctx.stopAllMic(), { kind: 'danger', icon: 'stop' })) : null,
+        active
+          ? h(
+              'div',
+              { class: 'mic-on', role: 'status' },
+              h('span', { class: 'rec-dot', 'aria-hidden': 'true' }),
+              h('span', { class: 'mic-on-text' }, 'Micro actif'),
+              micTimer,
+              button('Arrêter le micro', () => ctx.stopAllMic(), { kind: 'danger', icon: 'stop', size: 'sm', class: 'mic-stop' }),
+            )
+          : null,
       );
       micBadge.hidden = !active;
+      header.classList.toggle('recording', active);
+    }
+    if (active) {
+      const s = ctx.sessions().find((x) => x.isCapturing())?.snapshot();
+      micTimer.textContent = s ? formatDuration(s.elapsedMs) : '';
     }
     const llm = ctx.llm.state;
-    aiBadge.className = `badge ${llm.status === 'ready' ? 'badge-ok' : llm.status === 'downloading' || llm.status === 'loading' ? 'badge-busy' : ''}`;
-    aiBadge.textContent =
-      llm.status === 'ready' ? 'IA locale prête' : llm.status === 'downloading' || llm.status === 'loading' ? 'IA : chargement…' : llm.status === 'error' ? 'IA : échec → classique' : 'Mode classique';
+    const busy = llm.status === 'downloading' || llm.status === 'loading';
+    const aiText = llm.status === 'ready' ? 'IA locale prête' : busy ? 'IA : chargement…' : llm.status === 'error' ? 'IA : échec → mode classique' : 'Mode classique';
+    if (aiText !== lastAi) {
+      lastAi = aiText;
+      aiBadge.className = `badge ${llm.status === 'ready' ? 'badge-ok' : busy ? 'badge-busy' : llm.status === 'error' ? 'badge-warn' : ''}`;
+      replace(aiBadge, h('span', { class: 'dot', 'aria-hidden': 'true' }), aiText);
+    }
     const info = ctx.host.info();
-    modeBadge.textContent = info.kind === 'demo' ? `Démo · ${info.mode === 'compose' ? 'rédaction' : info.mode === 'read' ? 'lecture' : 'aucun'}` : info.mode === 'compose' ? 'Outlook · rédaction' : info.mode === 'read' ? 'Outlook · lecture' : 'Outlook';
-    modeBadge.className = `badge ${info.kind === 'demo' ? 'badge-demo' : 'badge-ok'}`;
+    const where = info.mode === 'compose' ? 'rédaction' : info.mode === 'read' ? 'lecture' : 'aucun';
+    const modeText = info.kind === 'demo' ? `Démo · ${where}` : info.mode === 'none' ? 'Outlook' : `Outlook · ${where}`;
+    if (demoSwitch) demoSwitch.value = info.mode === 'read' ? 'read' : 'compose';
+    if (modeText !== lastMode) {
+      lastMode = modeText;
+      modeBadge.className = `badge ${info.kind === 'demo' ? 'badge-demo' : 'badge-ok'}`;
+      replace(modeBadge, h('span', { class: 'dot', 'aria-hidden': 'true' }), modeText);
+    }
   };
   ctx.on('mic', renderBadges);
   ctx.on('models', renderBadges);
   ctx.on('host', renderBadges);
 
+  // Démonstration : le badge de mode est aussi le sélecteur de simulation (brouillon / message reçu).
   const demoSwitch =
     ctx.host instanceof DemoMailHost && !opts.dialogMode
       ? h(
           'select',
           {
-            class: 'demo-switch',
-            'aria-label': 'Simulation Outlook',
+            class: 'badge badge-demo pill-select demo-switch',
+            'aria-label': 'Simulation Outlook (démonstration)',
+            title: 'Simuler un brouillon ou un message reçu',
             onchange: (e: Event) => {
               (ctx.host as DemoMailHost).setMode((e.target as HTMLSelectElement).value as 'compose' | 'read');
               ctx.emit('host');
             },
           },
-          h('option', { value: 'compose' }, 'Simuler : brouillon'),
-          h('option', { value: 'read' }, 'Simuler : message reçu'),
+          h('option', { value: 'compose' }, 'Démo · rédaction'),
+          h('option', { value: 'read' }, 'Démo · lecture'),
         )
       : null;
-  ctx.host.onItemChanged(() => {
-    if (demoSwitch) (demoSwitch as HTMLSelectElement).value = ctx.host.info().mode === 'read' ? 'read' : 'compose';
-    ctx.emit('host');
-  });
+  if (demoSwitch) modeBadge.hidden = true;
+  ctx.host.onItemChanged(() => ctx.emit('host'));
 
-  const notice = h('div');
+  const notice = h('div', { class: 'notice-slot' });
   if (!loadSettings().privacyNoticeRead) {
     replace(
       notice,
       h(
         'div',
-        { class: 'alert alert-info notice', role: 'region', 'aria-label': 'Avertissement de confidentialité' },
-        h('strong', {}, 'Prototype — données fictives uniquement. '),
-        'Traitement local, aucun envoi automatique. Une IA locale ne vaut pas autorisation de traiter des données de patients : n’utilisez des contenus réels qu’avec l’accord de votre établissement.',
-        button(
-          'J’ai compris',
-          () => {
-            updateSettings({ privacyNoticeRead: true });
-            replace(notice);
-          },
-          { kind: 'ghost' },
+        { class: 'notice welcome-card', role: 'region', 'aria-label': 'Bienvenue et confidentialité' },
+        h('span', { class: 'welcome-icon', 'aria-hidden': 'true' }, icon('shield')),
+        h(
+          'div',
+          { class: 'welcome-body' },
+          h('strong', { class: 'welcome-title' }, 'Bienvenue !'),
+          h('p', {}, 'Tout se passe sur ce poste : rien n’est envoyé automatiquement, rien n’est conservé après la fermeture.'),
+          h(
+            'p',
+            { class: 'small muted' },
+            'Prototype — données fictives uniquement. Une IA locale ne vaut pas autorisation de traiter des données de patients : n’utilisez des contenus réels qu’avec l’accord de votre établissement.',
+          ),
+          button(
+            'J’ai compris',
+            () => {
+              updateSettings({ privacyNoticeRead: true });
+              replace(notice);
+              main.focus({ preventScroll: true });
+            },
+            { kind: 'primary', size: 'sm' },
+          ),
         ),
       ),
     );
   }
 
   replace(
-    root,
+    header,
     h(
-      'header',
-      { class: 'app-header' },
-      h('div', { class: 'header-row' }, h('h1', { class: 'brand' }, h('span', { class: 'logo', 'aria-hidden': 'true' }, icon('mic')), h('span', {}, opts.dialogMode ? 'Dictée — fenêtre séparée' : APP_NAME)), tools),
-      h('div', { class: 'badges' }, modeBadge, aiBadge, demoSwitch),
+      'div',
+      { class: 'header-row' },
+      h(
+        'h1',
+        { class: 'brand' },
+        h('span', { class: 'logo', 'aria-hidden': 'true' }, icon('wave')),
+        h('span', { class: 'brand-name' }, opts.dialogMode ? 'Dictée — fenêtre séparée' : APP_NAME),
+      ),
+      tools,
     ),
-    micBadge,
+    h('div', { class: 'badges' }, demoSwitch, modeBadge, aiBadge),
     nav,
-    notice,
-    main,
-    h('footer', { class: 'app-footer' }, 'Traitement local · aucun envoi automatique · aucune conservation'),
+    micBadge,
   );
-  main.setAttribute('tabindex', '-1');
-  navigate('dicter');
+  replace(root, header, notice, main, h('footer', { class: 'app-footer' }, h('span', {}, 'Traitement local · aucun envoi automatique · aucune conservation')));
+
+  // Ombre de l'en-tête au défilement (repère visuel discret).
+  const onScroll = () => header.classList.toggle('scrolled', (document.scrollingElement?.scrollTop ?? 0) > 4);
+  window.addEventListener('scroll', onScroll, { passive: true });
+
+  // Accueil : message ouvert en lecture → « Répondre » ; sinon « Dicter ».
+  currentTab = '' as TabId;
+  navigate(!opts.dialogMode && ctx.host.info().mode === 'read' ? 'repondre' : 'dicter');
   renderBadges();
 
   // Raccourcis : uniquement quand le panneau a le focus (une page ne peut pas capter les touches d'Outlook).
@@ -192,7 +254,7 @@ export function mountApp(root: HTMLElement, ctx: AppContext, opts: { dialogMode?
       e.preventDefault();
       if (currentTab !== 'dicter') navigate('dicter');
       const s = ctx.dictation.snapshot();
-      if (s.status === 'listening') void ctx.dictation.pause();
+      if (s.status === 'listening' || s.status === 'starting') ctx.dictation.pause();
       else if (s.status === 'paused') void ctx.dictation.resume();
       else void ctx.dictation.start();
     }
@@ -200,6 +262,7 @@ export function mountApp(root: HTMLElement, ctx: AppContext, opts: { dialogMode?
   document.addEventListener('keydown', onKey);
   registerCleanup(() => {
     document.removeEventListener('keydown', onKey);
+    window.removeEventListener('scroll', onScroll);
     ctx.dispose();
   });
 
