@@ -19,6 +19,23 @@
 - [x] 8 — Audit n°1 technique/esthétique/pratique (docs/AUDIT.md, `scripts/audit-ui.mjs`) : axe 31 → 0 violation, débordements 8 → 0, focus clavier stable pendant la dictée, rédaction de dictées non ponctuées améliorée. 113 tests.
 - [x] 9 — Piste « reconnaissance vocale native locale » vérifiée (docs/PISTE_RECONNAISSANCE_NATIVE.md) : Edge 155/157 = français local indisponible (même avec l'option activée) ; Chrome 155 = moteur local réel mais aucun texte obtenu en conteneur. Whisper conservé.
 - [ ] 10 — Audit n°2 complet et détaillé + refonte visuelle (style ChatGPT, futuriste, accueillant) + corrections — EN COURS.
+  - Mesures « avant » (2026-10-12) : Lighthouse perf 88 / accessibilité 100 / bonnes pratiques 92 / SEO 82 ; couverture 70,4 % lignes, 54 % branches ;
+    ESLint (règles typées) 169 problèmes ; axe 0 ; FCP 2,9 s (Office.js bloquant).
+  - Constats confirmés : plantage worker → interface bloquée ; double démarrage micro ; Échap pendant l'autorisation ignoré ; réglage
+    « ponctuation dictée » sans effet ; « remplace 12 par 13 » modifie « 112 » ; exemple de recherche « documents de stage envoyés » = 0 résultat ;
+    « réponse du secrétariat » / « avec le cadre » = 0 ; pas d'arrêt de génération IA ; révisions de modèles non figées ; repli d'insertion
+    en tête non signalé ; « Merci » sans ponctuation ; Office.js : Microsoft référence désormais officeapis.public.onecdn.static.microsoft
+    (domaine utilisé par le « Hello world » qui fonctionne au CHU) — hors Outlook ce script lève « hostInfo validation failed ».
+  - FAIT (commit 60c90f0) : protocole typé workers (src/ai/workerProtocol.ts), ModelHandle (plantage → rejet des requêtes, délais,
+    interruption, chargements concurrents), arrêt de génération (InterruptableStoppingCriteria), révisions figées (models.ts),
+    DictationSession (état « starting », jeton d'annulation), commandes (remplacement par mot entier), formules de politesse, recherche
+    (personnes connues, « avec », mots-clés optionnels si filtre), insertion signalée. 122 tests.
+  - RESTE : (a) Office.js nouveau domaine + détection du contexte Outlook dans bootstrap.ts (démo sans attente) + CSP/liste blanche ;
+    (b) robots.txt + meta ; (c) ESLint à 0 (script `npm run lint`) ; (d) tests ModelHandle/dictée/bootstrap/diagnostic ;
+    (e) REFONTE UI (styles.css nouveau design system, icônes contour, en-tête verre, navigation segmentée, accueil, orbe de dictée,
+    fil de discussion + zone de saisie façon ChatGPT avec bouton Arrêter, recherche avec surlignage, Modèles en langage clair,
+    Diagnostic avec synthèse, annonces lecteur d'écran, Ctrl+Entrée) ; (f) mise à jour tests UI/e2e/audit ; (g) mesures « après »
+    + docs/AUDIT.md v2 + docs/DESIGN.md + README.
 
 ## Faits vérifiés
 - Exchange on-prem 2016/2019/SE : Mailbox 1.1–1.5 (doc Microsoft, 2026-10-12).
