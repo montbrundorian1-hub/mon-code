@@ -49,6 +49,8 @@ export function isMobileDevice(nav: Navigator = navigator, win: Window | undefin
   const ua = nav.userAgent || '';
   if (/Android|iPhone|iPad|iPod|Mobile|Silk|Kindle|Tablet/i.test(ua)) return true;
   if (/Macintosh/.test(ua) && (nav.maxTouchPoints ?? 0) > 1) return true; // iPad en mode ordinateur
+  // Android en mode ordinateur : se présente comme un PC Linux, mais processeur ARM et écran tactile.
+  if (/arm|aarch64/i.test(nav.platform || '') && (nav.maxTouchPoints ?? 0) > 0) return true;
   if (gpuVendor && MOBILE_GPU_VENDORS.test(gpuVendor)) return true;
   try {
     return !!win?.matchMedia?.('(pointer: coarse)').matches && !!win.matchMedia('(hover: none)').matches;

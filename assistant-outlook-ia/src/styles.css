@@ -177,11 +177,12 @@ kbd {
   min-height: 100vh;
   isolation: isolate;
 }
-/* Lueur « aurore » très discrète en haut de page (défile avec la page : aucun recalcul au défilement). */
+/* Lueur « aurore » très discrète en haut de page (défile avec la page : aucun recalcul au défilement).
+   Aucun débord latéral : en position absolue, un débord crée un défilement horizontal du panneau. */
 .app::before {
   content: '';
   position: absolute;
-  inset: -120px -40px auto;
+  inset: -120px 0 auto;
   height: 340px;
   background: radial-gradient(60% 60% at 50% 0%, var(--glow), transparent 70%);
   pointer-events: none;
@@ -2141,6 +2142,10 @@ mark {
   font-size: 13.5px;
   overflow-wrap: anywhere;
   user-select: all;
+}
+.query-box .q-token {
+  display: inline-block;
+  max-width: 100%;
 }
 .outlook-search .steps {
   margin-top: 10px;

@@ -81,6 +81,16 @@ describe('Rédaction complète à partir d’une consigne', () => {
     expect(o.text).toContain("Je vous informe que je serai absent demain. Serait-il possible qu'on décale mes consultations\u00A0?");
   });
 
+  it('le destinataire nommé dans la consigne prime sur celui du brouillon ouvert (test navigateur)', async () => {
+    const o = await a.draftFromDictation('écris un mail au secrétariat pour dire que je serai absent demain', { recipients: [{ displayName: 'Dr FICTIF Alice' }], formality: 'auto' });
+    expect(o.text).toBe('Bonjour,\n\nJe vous informe que je serai absent demain.\n\nCordialement,');
+    expect(o.notes.join(' ')).not.toMatch(/titre/);
+    expect(o.validation.warnings).toEqual([]);
+    // Sans destinataire dans la consigne : le brouillon décide (Dr → formel).
+    const d = await a.draftFromDictation('je vous confirme ma présence au staff', { recipients: [{ displayName: 'Dr FICTIF Alice' }], formality: 'auto' });
+    expect(d.text.startsWith('Bonjour Docteur Fictif,')).toBe(true);
+  });
+
   it('réponse : « dis-lui que… » devient une réponse directe', async () => {
     const r = await a.reply('Bonjour, êtes-vous disponible jeudi ?', "dis-lui que je suis d'accord pour jeudi", { recipients: [{ displayName: 'Dr FICTIF Alice' }], formality: 'auto', isReply: true });
     expect(r.text).toBe("Bonjour Docteur Fictif,\n\nJe suis d'accord pour jeudi.\n\nBien cordialement,");

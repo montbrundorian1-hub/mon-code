@@ -150,7 +150,7 @@ export class Assistant {
     // le destinataire nommé et la formule d'appel qui en découle sont des ajouts légitimes.
     const reference = intent ? intent.body : raw;
     const classic = classicRewrite(source, style, { dictatedPunctuation: opts.dictatedPunctuation });
-    const allowed = [...style.recipients.map((r) => r.displayName), ...(intent?.recipient ? [intent.recipient] : []), ...(style.greeting ? [style.greeting] : [])];
+    const allowed = [...rawStyle.recipients.map((r) => r.displayName), ...(intent?.recipient ? [intent.recipient] : []), ...(style.greeting ? [style.greeting] : [])];
     const notes = intent
       ? [`Consigne comprise : ${intent.summary}.`, ...(intent.body ? [] : ['Précisez le contenu du message : la consigne n’indiquait que le destinataire.']), ...classic.notes]
       : classic.notes;
@@ -281,5 +281,6 @@ function understandInstruction(raw: string, dictatedPunctuation: boolean | undef
 function styleForIntent(style: StyleContext, intent: WritingIntent): StyleContext {
   const g = greetingFor(intent.recipient);
   if (!g) return style;
-  return { ...style, greeting: g.greeting, formalHint: g.formal || undefined };
+  // Le destinataire nommé dans la consigne prime sur ceux du brouillon ouvert (ton, formules, notes).
+  return { ...style, recipients: [], greeting: g.greeting, formalHint: g.formal || undefined };
 }

@@ -170,5 +170,38 @@ describe('Tablette et téléphone (test réel du 2026-10-13)', () => {
     expect(isMobileDevice(nav('Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/141 Edg/141'), undefined, 'nvidia')).toBe(false);
     const touchOnly = { matchMedia: (q: string) => ({ matches: /coarse|hover: none/.test(q) }) } as unknown as Window;
     expect(isMobileDevice(nav('Mozilla/5.0 (X11; Linux x86_64)'), touchOnly)).toBe(true);
+    // Mode ordinateur avec clavier/pavé tactile : processeur ARM + écran tactile.
+    expect(isMobileDevice(nav('Mozilla/5.0 (X11; Linux x86_64)', { platform: 'Linux aarch64', maxTouchPoints: 10 }), undefined)).toBe(true);
+    expect(isMobileDevice(nav('Mozilla/5.0 (X11; Linux x86_64)', { platform: 'Linux x86_64', maxTouchPoints: 10 }), undefined)).toBe(false);
+  });
+
+  it('échec sur la carte graphique : « Réessayer sur le processeur » est proposé en premier', async () => {
+    const { AppContext } = await import('../src/ui/context');
+    const { modelPanel } = await import('../src/components/modelPanel');
+    const { DemoMailHost } = await import('../src/mock/demoHost');
+    const workers: ScriptedWorker[] = [];
+    const factory = () => {
+      const w = new ScriptedWorker((msg, reply) => {
+        if (msg.type === 'load') reply(msg.device === 'webgpu' ? { type: 'error', message: 'GPU device was lost' } : { type: 'ready', warmupMs: 5 });
+      });
+      workers.push(w);
+      return w as unknown as Worker;
+    };
+    const ctx = new AppContext({ host: new DemoMailHost(), officeScriptLoaded: false, officeHost: null, readyMs: null, error: null, officeContext: false }, factory);
+    ctx.caps = { ...GPU, gpuInfo: null };
+    const panel = modelPanel(ctx, 'asr');
+    document.body.append(panel);
+    const small = ASR_MODELS.find((m) => m.id === 'whisper-small')!;
+    await ctx.asr.load(small, pickVariant(small, GPU)!, true);
+    expect(panel.textContent).toMatch(/Détail technique : GPU device was lost/);
+    const buttons = [...panel.querySelectorAll<HTMLButtonElement>('.alert-error button')].map((b) => b.textContent);
+    expect(buttons[1]).toBe('Réessayer sur le processeur (252 Mo)');
+    expect(buttons[2]).toMatch(/^Essayer plus léger : Whisper base/);
+    [...panel.querySelectorAll<HTMLButtonElement>('.alert-error button')][1].click();
+    await new Promise((r) => setTimeout(r, 20));
+    expect(workers.at(-1)!.posted.at(-1)).toMatchObject({ type: 'load', device: 'wasm' });
+    expect(ctx.asr.state.status).toBe('ready');
+    ctx.dispose();
+    document.body.innerHTML = '';
   });
 });

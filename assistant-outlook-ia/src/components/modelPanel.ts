@@ -146,7 +146,7 @@ export function modelPanel(ctx: AppContext, family: ModelFamily, opts: { compact
 
     const errorBlock =
       s.status === 'error'
-        ? errorView(ctx, family, s.spec, s.message, s.kind, (spec, variant) => start(spec, variant))
+        ? errorView(ctx, family, s.spec, s.variant, s.message, s.kind, (spec, variant) => start(spec, variant))
         : s.status === 'cancelled'
           ? h('p', { class: 'state warn' }, icon('info'), 'Téléchargement annulé.')
           : null;
@@ -208,11 +208,16 @@ function errorView(
   ctx: AppContext,
   family: ModelFamily,
   spec: ModelSpec,
+  failed: ModelVariant,
   message: string,
   kind: 'memory' | 'network' | 'crash' | 'other',
   retry: (spec: ModelSpec, variant: ModelVariant) => void,
 ): HTMLElement {
   const lighter = ctx.caps ? lighterThan(spec.id, family, ctx.caps) : null;
+  // Échec sur la carte graphique (pilote, mémoire graphique, tablette non reconnue) : le même modèle
+  // sur le processeur est le repli le plus sûr, proposé en premier.
+  const cpu =
+    failed.device === 'webgpu' && kind !== 'network' && ctx.caps?.wasm && ctx.caps.wasmSimd ? (spec.variants.find((v) => v.device === 'wasm') ?? null) : null;
   const explanation =
     kind === 'memory'
       ? 'Mémoire insuffisante : ce modèle est trop lourd pour ce poste.'
@@ -249,11 +254,17 @@ function errorView(
           { kind: 'ghost', icon: 'copy', size: 'sm' },
         ),
       ),
-      lighter
+      lighter || cpu
         ? h(
             'div',
             { class: 'row' },
-            button(`Essayer plus léger : ${lighter.spec.label} (${formatBytes(lighter.variant.bytes)})`, () => retry(lighter.spec, lighter.variant), { kind: 'accent', size: 'sm' }),
+            cpu ? button(`Réessayer sur le processeur (${formatBytes(cpu.bytes)})`, () => retry(spec, cpu), { kind: 'accent', size: 'sm' }) : null,
+            lighter
+              ? button(`Essayer plus léger : ${lighter.spec.label} (${formatBytes(lighter.variant.bytes)})`, () => retry(lighter.spec, lighter.variant), {
+                  kind: cpu ? 'ghost' : 'accent',
+                  size: 'sm',
+                })
+              : null,
           )
         : h('p', {}, family === 'asr' ? 'Aucun modèle plus léger : saisissez le texte au clavier (onglet « Rédiger »).' : 'Aucun modèle plus léger : le mode classique (sans IA) reste pleinement utilisable.'),
     ),

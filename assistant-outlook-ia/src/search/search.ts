@@ -177,7 +177,7 @@ export function parseQuery(raw: string, now: Date = new Date(), known: ReadonlyS
 }
 
 /** Mot d'origine (accents compris) correspondant à un nom normalisé (« secretariat » → « secrétariat »). */
-function originalWord(raw: string, normalized: string): string {
+export function originalWord(raw: string, normalized: string): string {
   const hit = (raw.match(/[\p{L}\p{N}-]+/gu) ?? []).find((t) => stripAccents(t.toLowerCase()) === normalized);
   return hit ?? normalized;
 }

@@ -7,7 +7,7 @@
 
 import { DemoMailHost } from '../mock/demoHost';
 import { DEMO_MESSAGES } from '../mock/messages';
-import { DemoSearchProvider, ExchangeSearchProvider, highlightParts, outlookSearchQuery, parseQuery, SERVICE_SENDERS, type SearchQuery } from '../search/search';
+import { DemoSearchProvider, ExchangeSearchProvider, highlightParts, originalWord, outlookSearchQuery, parseQuery, SERVICE_SENDERS, type SearchQuery } from '../search/search';
 import type { AppContext } from '../ui/context';
 import { announce, button, copyText, h, icon, replace, toast } from '../ui/dom';
 import { avatar } from './avatar';
@@ -33,9 +33,9 @@ export function searchView(ctx: AppContext): HTMLElement {
 
   const explain = (q: SearchQuery) => {
     const chips: Array<[string, Parameters<typeof icon>[0]]> = [];
-    if (q.from) chips.push([`de : ${q.from}`, 'user']);
-    if (q.to) chips.push([`à : ${q.to}`, 'user']);
-    if (q.participant) chips.push([`avec : ${q.participant}`, 'user']);
+    if (q.from) chips.push([`de : ${originalWord(q.raw, q.from)}`, 'user']);
+    if (q.to) chips.push([`à : ${originalWord(q.raw, q.to)}`, 'user']);
+    if (q.participant) chips.push([`avec : ${originalWord(q.raw, q.participant)}`, 'user']);
     if (q.folder) chips.push([`dossier : ${q.folder}`, 'inbox']);
     if (q.after) chips.push([`depuis le ${q.after.toLocaleDateString('fr-FR')}`, 'clock']);
     if (q.before) chips.push([`avant le ${q.before.toLocaleDateString('fr-FR')}`, 'clock']);
@@ -140,7 +140,7 @@ function outlookSearchView(): HTMLElement {
 
   const copy = async (text: string) => {
     const ok = await copyText(text);
-    toast(ok ? 'Recherche copiée : collez-la dans « Rechercher » en haut à gauche d’Outlook.' : 'Copie impossible : sélectionnez la recherche et copiez-la.', ok ? 'ok' : 'error', 6000);
+    toast(ok ? 'Recherche copiée : collez-la dans la zone de recherche d’Outlook.' : 'Copie impossible : sélectionnez la recherche et copiez-la.', ok ? 'ok' : 'error', 6000);
   };
 
   const run = (text: string) => {
@@ -155,9 +155,9 @@ function outlookSearchView(): HTMLElement {
       return;
     }
     const chips: string[] = [];
-    if (q.from) chips.push(`de : ${q.from}`);
-    if (q.to) chips.push(`à : ${q.to}`);
-    if (q.participant) chips.push(`avec : ${q.participant}`);
+    if (q.from) chips.push(`de : ${originalWord(q.raw, q.from)}`);
+    if (q.to) chips.push(`à : ${originalWord(q.raw, q.to)}`);
+    if (q.participant) chips.push(`avec : ${originalWord(q.raw, q.participant)}`);
     if (q.folder) chips.push(`dossier : ${q.folder}`);
     if (q.words?.length) chips.push(`mots-clés : ${q.words.join(', ')}`);
     const legend = [
@@ -171,7 +171,8 @@ function outlookSearchView(): HTMLElement {
         'section',
         { class: 'card outlook-search' },
         h('div', { class: 'card-head' }, h('h2', {}, 'Recherche prête pour Outlook')),
-        h('p', { class: 'query-box', 'aria-label': 'Recherche à coller' }, os.precise),
+        // Un filtre par bloc insécable : « received:2026-10-06..2026-10-13 » n'est pas coupé en plein milieu.
+        h('p', { class: 'query-box', 'aria-label': 'Recherche à coller' }, ...os.precise.split(' ').flatMap((t, i) => [i ? ' ' : '', h('span', { class: 'q-token' }, t)])),
         legend.length ? h('p', { class: 'muted small' }, legend.join(' · ')) : null,
         h('div', { class: 'row' }, button('Copier la recherche', () => void copy(os.precise), { kind: 'primary', icon: 'copy', id: 'btn-copy-search' })),
         h(
