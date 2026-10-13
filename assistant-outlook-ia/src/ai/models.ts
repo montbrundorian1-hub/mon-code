@@ -190,12 +190,19 @@ export interface Capabilities {
   /** navigator.deviceMemory (plafonné à 8 par le navigateur), null si inconnu. */
   memoryGB: number | null;
   cores: number | null;
+  /**
+   * Tablette ou téléphone. Test réel (2026-10-13, tablette Android) : lenteurs de tout l'appareil et
+   * échec du chargement signalés ; cause la plus probable : les variantes WebGPU (jusqu'à 590 Mo)
+   * sur la carte graphique mobile. Par précaution, seules les variantes processeur (WASM) sont
+   * proposées sur mobile.
+   */
+  mobile?: boolean;
 }
 
 /** Choisit la variante compatible la plus adaptée pour un modèle donné. */
 export function pickVariant(spec: ModelSpec, caps: Capabilities): ModelVariant | null {
   for (const v of spec.variants) {
-    if (v.device === 'webgpu' && !caps.webgpu) continue;
+    if (v.device === 'webgpu' && (!caps.webgpu || caps.mobile)) continue;
     if (v.requiresF16 && !caps.shaderF16) continue;
     if (v.device === 'wasm' && !(caps.wasm && caps.wasmSimd)) continue;
     return v;
@@ -206,8 +213,9 @@ export function pickVariant(spec: ModelSpec, caps: Capabilities): ModelVariant |
 export type Tier = 'gpu' | 'cpu-confort' | 'cpu-modeste' | 'insuffisant';
 
 export function hardwareTier(caps: Capabilities): Tier {
-  if (!caps.wasm || !caps.wasmSimd) return caps.webgpu ? 'gpu' : 'insuffisant';
-  if (caps.webgpu) return 'gpu';
+  const gpu = caps.webgpu && !caps.mobile;
+  if (!caps.wasm || !caps.wasmSimd) return gpu ? 'gpu' : 'insuffisant';
+  if (gpu) return 'gpu';
   const mem = caps.memoryGB ?? 4;
   const cores = caps.cores ?? 4;
   if (mem >= 8 && cores >= 4) return 'cpu-confort';
@@ -228,7 +236,10 @@ export function recommend(family: ModelFamily, caps: Capabilities): Array<{ spec
     .filter((x) => x.spec.minMemoryGB <= Math.max(mem, 2) || tier === 'gpu');
 
   let preferredOrder: string[];
-  if (family === 'asr') {
+  if (caps.mobile && tier !== 'insuffisant') {
+    // Tablette / téléphone : la rapidité d'abord (calcul sur un seul cœur du processeur).
+    preferredOrder = family === 'asr' ? ['whisper-base', 'whisper-small', 'whisper-tiny'] : ['granite-4.0-350m', 'qwen3-0.6b'];
+  } else if (family === 'asr') {
     preferredOrder =
       tier === 'gpu'
         ? ['whisper-small', 'whisper-base', 'whisper-tiny', 'whisper-large-v3-turbo']

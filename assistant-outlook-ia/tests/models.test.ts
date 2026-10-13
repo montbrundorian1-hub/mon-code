@@ -142,3 +142,33 @@ describe('cas 17 — bascule vers la rédaction classique', () => {
     expect(r.engine).toBe('classique');
   });
 });
+
+describe('Tablette et téléphone (test réel du 2026-10-13)', () => {
+  const TABLET: Capabilities = { ...GPU, mobile: true };
+
+  it('pas de variante carte graphique sur mobile, modèles légers en premier', () => {
+    expect(hardwareTier(TABLET)).toBe('cpu-confort');
+    const asr = recommend('asr', TABLET);
+    expect(asr.map((x) => x.spec.id)).toEqual(['whisper-base', 'whisper-small', 'whisper-tiny']);
+    expect(asr.every((x) => x.variant.device === 'wasm')).toBe(true);
+    expect(asr[0].variant.bytes).toBeLessThan(100 * 1024 * 1024);
+    expect(recommend('llm', TABLET).every((x) => x.variant.device === 'wasm')).toBe(true);
+  });
+
+  it('sur ordinateur avec carte graphique, rien ne change', () => {
+    expect(hardwareTier(GPU)).toBe('gpu');
+    expect(recommend('asr', GPU)[0].variant.device).toBe('webgpu');
+  });
+
+  it('détection : système mobile, iPad, mode ordinateur d’une tablette Android (processeur graphique ARM)', async () => {
+    const { isMobileDevice } = await import('../src/diagnostics/diagnostics');
+    const nav = (ua: string, extra: Record<string, unknown> = {}) => ({ userAgent: ua, maxTouchPoints: 0, ...extra }) as unknown as Navigator;
+    expect(isMobileDevice(nav('Mozilla/5.0 (Linux; Android 14; SM-X920) AppleWebKit/537.36 Chrome/141 Safari/537.36'), undefined)).toBe(true);
+    expect(isMobileDevice(nav('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)', { maxTouchPoints: 5 }), undefined)).toBe(true);
+    expect(isMobileDevice(nav('Mozilla/5.0 (X11; Linux x86_64) Chrome/141 Safari/537.36'), undefined, 'arm')).toBe(true);
+    expect(isMobileDevice(nav('Mozilla/5.0 (X11; Linux x86_64)', { userAgentData: { mobile: true } }), undefined)).toBe(true);
+    expect(isMobileDevice(nav('Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/141 Edg/141'), undefined, 'nvidia')).toBe(false);
+    const touchOnly = { matchMedia: (q: string) => ({ matches: /coarse|hover: none/.test(q) }) } as unknown as Window;
+    expect(isMobileDevice(nav('Mozilla/5.0 (X11; Linux x86_64)'), touchOnly)).toBe(true);
+  });
+});

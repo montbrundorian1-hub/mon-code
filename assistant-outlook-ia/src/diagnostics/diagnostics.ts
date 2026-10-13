@@ -35,6 +35,28 @@ const SIMD_PROBE = new Uint8Array([
   0, 97, 115, 109, 1, 0, 0, 0, 1, 5, 1, 96, 0, 1, 123, 3, 2, 1, 0, 10, 10, 1, 8, 0, 65, 0, 253, 15, 253, 98, 11,
 ]);
 
+/** Fabricants de processeurs graphiques mobiles (WebGPU `adapter.info.vendor`). */
+const MOBILE_GPU_VENDORS = /^(arm|qualcomm|imagination|img-tec|powervr|samsung|mediatek|broadcom|vivante)/i;
+
+/**
+ * Tablette ou téléphone, y compris en « mode ordinateur » (où le navigateur se présente comme un
+ * PC) : écran tactile comme pointeur principal, système mobile, ou processeur graphique mobile.
+ */
+export function isMobileDevice(nav: Navigator = navigator, win: Window | undefined = typeof window === 'undefined' ? undefined : window, gpuVendor: string | null = null): boolean {
+  const uaData = (nav as Navigator & { userAgentData?: { mobile?: boolean; platform?: string } }).userAgentData;
+  if (uaData?.mobile) return true;
+  if (/android|ios|ipados/i.test(uaData?.platform ?? '')) return true;
+  const ua = nav.userAgent || '';
+  if (/Android|iPhone|iPad|iPod|Mobile|Silk|Kindle|Tablet/i.test(ua)) return true;
+  if (/Macintosh/.test(ua) && (nav.maxTouchPoints ?? 0) > 1) return true; // iPad en mode ordinateur
+  if (gpuVendor && MOBILE_GPU_VENDORS.test(gpuVendor)) return true;
+  try {
+    return !!win?.matchMedia?.('(pointer: coarse)').matches && !!win.matchMedia('(hover: none)').matches;
+  } catch {
+    return false;
+  }
+}
+
 export async function detectCapabilities(nav: Navigator = navigator): Promise<Capabilities & { gpuInfo: string | null }> {
   const wasm = typeof WebAssembly === 'object' && typeof WebAssembly.instantiate === 'function';
   let wasmSimd: boolean;
@@ -46,6 +68,7 @@ export async function detectCapabilities(nav: Navigator = navigator): Promise<Ca
   let webgpu = false;
   let shaderF16 = false;
   let gpuInfo: string | null = null;
+  let gpuVendor: string | null = null;
   const gpu = (nav as Navigator & { gpu?: { requestAdapter(): Promise<unknown> } }).gpu;
   if (gpu) {
     try {
@@ -54,6 +77,7 @@ export async function detectCapabilities(nav: Navigator = navigator): Promise<Ca
         webgpu = true;
         shaderF16 = !!(adapter as { features?: Set<string> }).features?.has('shader-f16');
         const info = (adapter as { info?: { vendor?: string; architecture?: string } }).info;
+        gpuVendor = info?.vendor ?? null;
         gpuInfo = info ? [info.vendor, info.architecture].filter(Boolean).join(' ') || null : null;
       }
     } catch {
@@ -62,7 +86,8 @@ export async function detectCapabilities(nav: Navigator = navigator): Promise<Ca
   }
   const memoryGB = (nav as Navigator & { deviceMemory?: number }).deviceMemory ?? null;
   const cores = nav.hardwareConcurrency || null;
-  return { webgpu, shaderF16, wasm, wasmSimd, memoryGB, cores, gpuInfo };
+  const mobile = isMobileDevice(nav, typeof window === 'undefined' ? undefined : window, gpuVendor);
+  return { webgpu, shaderF16, wasm, wasmSimd, memoryGB, cores, gpuInfo, mobile };
 }
 
 export async function runDiagnostics(boot: BootResult): Promise<Check[]> {
@@ -207,6 +232,14 @@ export async function runDiagnostics(boot: BootResult): Promise<Check[]> {
     status: 'info',
     value: (globalThis as { crossOriginIsolated?: boolean }).crossOriginIsolated ? 'oui' : 'non (1 thread)',
     detail: 'Un panneau Outlook ne peut généralement pas être isolé : calcul sur un seul cœur.',
+  });
+  checks.push({
+    id: 'mobile',
+    group: 'IA locale',
+    label: 'Type d’appareil',
+    status: 'info',
+    value: caps.mobile ? 'tablette ou téléphone' : 'ordinateur',
+    detail: caps.mobile ? 'Calcul sur le processeur uniquement, avec des modèles légers (la carte graphique mobile n’est pas utilisée).' : undefined,
   });
   checks.push({
     id: 'webgpu',

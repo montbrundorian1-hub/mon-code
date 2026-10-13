@@ -177,10 +177,10 @@ kbd {
   min-height: 100vh;
   isolation: isolate;
 }
-/* Lueur « aurore » très discrète en haut de page. */
+/* Lueur « aurore » très discrète en haut de page (défile avec la page : aucun recalcul au défilement). */
 .app::before {
   content: '';
-  position: fixed;
+  position: absolute;
   inset: -120px -40px auto;
   height: 340px;
   background: radial-gradient(60% 60% at 50% 0%, var(--glow), transparent 70%);
@@ -202,13 +202,10 @@ kbd {
   border-bottom: 1px solid transparent;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
-@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
-  .app-header {
-    background: var(--header-bg);
-    -webkit-backdrop-filter: saturate(1.6) blur(16px);
-    backdrop-filter: saturate(1.6) blur(16px);
-  }
-}
+/*
+ * Pas de flou d'arrière-plan (backdrop-filter) : recalculé à chaque défilement, il est coûteux sur
+ * tablette. Retiré par précaution après le test réel du 2026-10-13 (lenteurs signalées).
+ */
 .app-header.scrolled {
   border-bottom-color: var(--border);
   box-shadow: 0 6px 18px -14px rgba(0, 0, 0, 0.35);
@@ -1207,9 +1204,9 @@ button.chip:hover {
   inset: -16px;
   z-index: -1;
   border-radius: 50%;
-  background: var(--aurora-conic);
-  filter: blur(22px);
-  opacity: 0.35;
+  /* Halo en dégradé radial (sans filtre de flou, coûteux sur les cartes graphiques mobiles). */
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.55) 0%, rgba(56, 189, 248, 0.32) 42%, rgba(168, 85, 247, 0) 70%);
+  opacity: 0.45;
   transform: scale(calc(0.9 + var(--level) * 0.45));
   transition: transform 0.18s ease-out, opacity 0.3s;
 }
@@ -1250,9 +1247,6 @@ button.chip:hover {
 .orb.paused .orb-core {
   filter: saturate(0.55) brightness(0.95);
 }
-.orb:not(.active):not(:disabled) .orb-halo {
-  animation: breathe 4s ease-in-out infinite;
-}
 .orb:disabled {
   cursor: not-allowed;
 }
@@ -1267,12 +1261,6 @@ button.chip:hover {
 @keyframes orb-spin {
   to {
     transform: rotate(360deg);
-  }
-}
-@keyframes breathe {
-  50% {
-    opacity: 0.55;
-    transform: scale(1.04);
   }
 }
 .voice-status {
@@ -1440,17 +1428,11 @@ button.chip:hover {
   color: #fff;
   background: radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0) 42%), var(--aurora-conic);
   box-shadow: 0 10px 28px -10px rgba(99, 102, 241, 0.75);
-  animation: float 5s ease-in-out infinite;
 }
 .welcome-orb .icon {
   width: 24px;
   height: 24px;
   filter: drop-shadow(0 1px 2px rgba(15, 23, 42, 0.4));
-}
-@keyframes float {
-  50% {
-    transform: translateY(-4px);
-  }
 }
 .suggestions {
   display: grid;
@@ -2303,6 +2285,14 @@ mark {
 }
 .tech p {
   margin-top: 4px;
+  overflow-wrap: anywhere;
+}
+.tech-detail {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  margin-top: 6px;
   overflow-wrap: anywhere;
 }
 .settings-list {

@@ -7,7 +7,7 @@ import { formatBytes, lighterThan, recommend, type ModelFamily, type ModelSpec, 
 import { HEAVY_MODEL_BYTES } from '../config';
 import { loadSettings, updateSettings } from '../security/settings';
 import type { AppContext } from '../ui/context';
-import { announce, button, h, icon, replace } from '../ui/dom';
+import { announce, button, copyText, h, icon, replace, toast } from '../ui/dom';
 
 const COPY: Record<ModelFamily, { title: string; sub: string; icon: 'mic' | 'sparkles' }> = {
   asr: { title: 'Dictée vocale', sub: 'Reconnaissance de la parole sur ce poste : aucun audio n’est envoyé ni conservé.', icon: 'mic' },
@@ -180,6 +180,9 @@ export function modelPanel(ctx: AppContext, family: ModelFamily, opts: { compact
     replace(
       root,
       head(h('span', { class: 'chip' }, family === 'asr' ? 'à activer' : 'facultatif')),
+      family === 'llm' && caps.mobile
+        ? h('p', { class: 'caution' }, icon('info'), h('span', {}, 'Sur tablette, l’IA locale est très lente : le mode classique, qui comprend vos consignes, est recommandé.'))
+        : null,
       errorBlock,
       list,
       chosen.spec.caution ? h('p', { class: 'caution' }, icon('info'), h('span', {}, chosen.spec.caution)) : null,
@@ -231,7 +234,21 @@ function errorView(
       {},
       h('strong', {}, `Échec : ${spec.label}. `),
       explanation,
-      h('details', { class: 'tech' }, h('summary', {}, 'Détail technique'), h('p', { class: 'small' }, message)),
+      // Détail visible et copiable : permet de diagnostiquer à distance (aucune donnée personnelle).
+      h(
+        'div',
+        { class: 'tech-detail' },
+        h('span', { class: 'small' }, `Détail technique : ${message}`),
+        button(
+          'Copier le détail',
+          () => {
+            void copyText(`Assistant Outlook IA — échec de chargement : ${spec.label} — ${kind} — ${message}`).then((ok) =>
+              toast(ok ? 'Détail copié : vous pouvez le transmettre.' : 'Copie impossible.', ok ? 'ok' : 'error'),
+            );
+          },
+          { kind: 'ghost', icon: 'copy', size: 'sm' },
+        ),
+      ),
       lighter
         ? h(
             'div',
