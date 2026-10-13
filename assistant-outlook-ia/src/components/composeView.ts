@@ -24,6 +24,11 @@ type LogEntry = { role: 'user' | 'assistant'; text: string; tone?: 'ok' | 'info'
 /** Exemples fictifs proposés à l'accueil (aucune donnée réelle). */
 const SUGGESTIONS: Array<{ icon: IconName; title: string; text: string }> = [
   {
+    icon: 'sparkles',
+    title: 'Donner une consigne',
+    text: "écris un mail au secrétariat pour dire que je serai absent demain matin et demander qu'on décale mes consultations",
+  },
+  {
     icon: 'clock',
     title: 'Confirmer un rendez-vous',
     text: 'bonjour docteur martin je vous confirme le staff de jeudi à 14 h 30 je viendrai avec le dossier de la chambre 12',
@@ -32,11 +37,6 @@ const SUGGESTIONS: Array<{ icon: IconName; title: string; text: string }> = [
     icon: 'chat',
     title: 'Demander un avis',
     text: 'bonjour je souhaiterais votre avis sur un patient fictif de 45 ans hospitalisé pour une pneumopathie pourriez-vous passer demain matin',
-  },
-  {
-    icon: 'file',
-    title: 'Transmettre des résultats',
-    text: 'bonjour voici les résultats fictifs de biologie du patient de la chambre 8 la CRP est à 45 mg/l merci de me dire si on adapte le traitement',
   },
 ];
 
@@ -92,7 +92,7 @@ export function composeView(ctx: AppContext): HTMLElement {
   const aiText = h('span', { class: 'ai-info' });
 
   const comp = composer({
-    placeholder: 'Décrivez votre mail, collez un texte ou dictez-le…',
+    placeholder: 'Votre message, ou une consigne : « mail au secrétariat pour dire que… »',
     ariaLabel: 'Texte original',
     sendLabel: 'Rédiger le mail',
     sendId: 'btn-redact',
@@ -145,7 +145,7 @@ export function composeView(ctx: AppContext): HTMLElement {
       commands
         ? { placeholder: 'Une modification ? « plus court », « ajoute : … »', ariaLabel: 'Consigne de modification', sendLabel: 'Appliquer la consigne' }
         : {
-            placeholder: ctx.draft.outcome ? 'Modifiez le texte d’origine, puis envoyez pour régénérer' : 'Décrivez votre mail, collez un texte ou dictez-le…',
+            placeholder: ctx.draft.outcome ? 'Modifiez le texte d’origine, puis envoyez pour régénérer' : 'Votre message, ou une consigne : « mail au secrétariat pour dire que… »',
             ariaLabel: 'Texte original',
             sendLabel: ctx.draft.outcome ? 'Régénérer le mail' : 'Rédiger le mail',
           },
@@ -337,7 +337,7 @@ export function composeView(ctx: AppContext): HTMLElement {
       { class: 'welcome' },
       h('span', { class: 'welcome-orb', 'aria-hidden': 'true' }, icon('sparkles')),
       h('h2', { class: 'hero-title' }, 'Que souhaitez-vous écrire ?'),
-      h('p', { class: 'hero-sub' }, 'Décrivez votre message en quelques mots, collez un texte ou dictez-le : l’assistant le met en forme, sans jamais rien envoyer.'),
+      h('p', { class: 'hero-sub' }, 'Dictez ou collez votre message, ou donnez une consigne (« écris un mail au secrétariat pour dire que… ») : l’assistant le met en forme, sans jamais rien envoyer.'),
       h(
         'div',
         { class: 'suggestions', role: 'group', 'aria-label': 'Exemples fictifs' },

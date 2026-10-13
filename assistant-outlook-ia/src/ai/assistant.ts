@@ -5,12 +5,13 @@
  * Interface « TextGenerationProvider » : permet de remplacer le moteur IA sans toucher à l'UI.
  */
 
-import { classicRewrite, type Correction } from './classic';
+import { applyDictatedPunctuation, classicRewrite, removeHesitations, type Correction } from './classic';
 import { applyClassicCommand, type ParsedCommand } from './commands';
 import { coverage } from './coverage';
 import { compareFacts, extractFacts, type Fact, type FactReport } from './factGuard';
 import { findUncertainMedicalTerms, type UncertainTerm } from './medicalLexicon';
 import { chatMessages, cleanLlmOutput, commandMessages, polishMessages, replyMessages, summaryMessages, type ChatMessage } from './prompts';
+import { greetingFor, parseWritingIntent, type WritingIntent } from './intent';
 import { resolveStyle, type StyleContext } from './style';
 
 export interface GenerationResult {
@@ -139,18 +140,27 @@ export class Assistant {
     return this.provider?.label ?? '';
   }
 
-  /** Dictée brute → courriel. */
-  async draftFromDictation(raw: string, style: StyleContext, opts: DraftOptions = {}): Promise<DraftOutcome> {
+  /** Dictée brute (ou consigne : « écris un mail au secrétariat pour dire que… ») → courriel. */
+  async draftFromDictation(raw: string, rawStyle: StyleContext, opts: DraftOptions = {}): Promise<DraftOutcome> {
     const t0 = performance.now();
-    const classic = classicRewrite(raw, style, { dictatedPunctuation: opts.dictatedPunctuation });
-    const allowed = style.recipients.map((r) => r.displayName);
+    const intent = understandInstruction(raw, opts.dictatedPunctuation);
+    const style = intent ? styleForIntent(rawStyle, intent) : rawStyle;
+    const source = intent ? intent.body : raw;
+    // Vérifications : sur la consigne reformulée (les mots « écris un mail… » ne sont pas du contenu) ;
+    // le destinataire nommé et la formule d'appel qui en découle sont des ajouts légitimes.
+    const reference = intent ? intent.body : raw;
+    const classic = classicRewrite(source, style, { dictatedPunctuation: opts.dictatedPunctuation });
+    const allowed = [...style.recipients.map((r) => r.displayName), ...(intent?.recipient ? [intent.recipient] : []), ...(style.greeting ? [style.greeting] : [])];
+    const notes = intent
+      ? [`Consigne comprise : ${intent.summary}.`, ...(intent.body ? [] : ['Précisez le contenu du message : la consigne n’indiquait que le destinataire.']), ...classic.notes]
+      : classic.notes;
     const base: DraftOutcome = {
       text: classic.text,
       engine: 'classique',
       engineLabel: 'Mode classique (règles, sans IA)',
       classicText: classic.text,
-      notes: classic.notes,
-      validation: validate(raw, classic.text, classic.corrections, allowed),
+      notes,
+      validation: validate(reference, classic.text, classic.corrections, allowed),
     };
     if (!opts.useAi || !this.aiAvailable()) return { ...base, ms: Math.round(performance.now() - t0) };
 
@@ -167,7 +177,7 @@ export class Assistant {
       text: out,
       engine: 'ia',
       engineLabel: `IA locale : ${this.provider!.label}`,
-      validation: validate(raw, out, classic.corrections, allowed),
+      validation: validate(reference, out, classic.corrections, allowed),
       ms: Math.round(performance.now() - t0),
     };
   }
@@ -208,7 +218,9 @@ export class Assistant {
   ): Promise<DraftOutcome> {
     const resolved = resolveStyle({ ...style, isReply: true }, intentions);
     const allowed = style.recipients.map((r) => r.displayName);
-    const trimmed = intentions.trim();
+    // « dis-lui que je suis d'accord » → « Je suis d'accord. » (consigne reformulée, destinataire = expéditeur)
+    const intent = understandInstruction(intentions, opts.dictatedPunctuation, true);
+    const trimmed = (intent?.body || intentions).trim();
     const classicBody = trimmed
       ? classicRewrite(trimmed, style, { addGreeting: false, addClosing: false, dictatedPunctuation: opts.dictatedPunctuation })
       : { text: 'Merci pour votre message. [à compléter]', corrections: [], notes: [] };
@@ -257,4 +269,17 @@ export class Assistant {
   stop(): void {
     this.provider?.interrupt?.();
   }
+}
+
+/** Reconnaît une consigne d'écriture dans une dictée (après ponctuation dictée et hésitations). */
+function understandInstruction(raw: string, dictatedPunctuation: boolean | undefined, reply = false): WritingIntent | null {
+  const prepared = removeHesitations(dictatedPunctuation === false ? raw : applyDictatedPunctuation(raw));
+  return parseWritingIntent(prepared, { reply });
+}
+
+/** Le destinataire nommé dans la consigne (« au Dr Martin ») fixe la formule d'appel et le ton. */
+function styleForIntent(style: StyleContext, intent: WritingIntent): StyleContext {
+  const g = greetingFor(intent.recipient);
+  if (!g) return style;
+  return { ...style, greeting: g.greeting, formalHint: g.formal || undefined };
 }

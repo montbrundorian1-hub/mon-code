@@ -93,7 +93,8 @@ export function extractFacts(text: string): Fact[] {
   for (const m of s.matchAll(/\b(\d{1,2})[/.-](\d{1,2})(?:[/.-](\d{2,4}))?\b/g)) {
     add({ kind: 'date', key: `${+m[1]}/${+m[2]}${m[3] ? `/${m[3]}` : ''}`, label: m[0] });
   }
-  for (const m of s.matchAll(new RegExp(`\\b(\\d{1,2})(?:er)?\\s+(${MONTHS.join('|')})(?:\\s+(\\d{4}))?`, 'g'))) {
+  // (?![a-z]) : « un mail » (« 1 mail ») n'est pas la date « 1 mai ».
+  for (const m of s.matchAll(new RegExp(`\\b(\\d{1,2})(?:er)?\\s+(${MONTHS.join('|')})(?![a-z])(?:\\s+(\\d{4}))?`, 'g'))) {
     const month = MONTHS.indexOf(m[2]) + 1;
     add({ kind: 'date', key: `${+m[1]}/${month}${m[3] ? `/${m[3]}` : ''}`, label: m[0] });
   }

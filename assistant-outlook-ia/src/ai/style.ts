@@ -15,6 +15,10 @@ export interface StyleContext {
   recipients: Recipient[];
   formality: Formality;
   isReply?: boolean;
+  /** Formule d'appel imposée (destinataire nommé dans une consigne : « au Dr Martin »). */
+  greeting?: string;
+  /** Ton conseillé par la consigne (destinataire titré) lorsque le ton est automatique. */
+  formalHint?: boolean;
 }
 
 export interface ResolvedStyle {
@@ -56,9 +60,15 @@ export function resolveStyle(ctx: StyleContext, text = ''): ResolvedStyle {
   } else if (detectTutoiement(text)) {
     formality = 'familier';
     reason = 'Tutoiement détecté dans la dictée';
+  } else if (ctx.formalHint) {
+    formality = 'formel';
+    reason = 'Destinataire avec titre nommé dans la consigne';
   } else if (recips.some((r) => titleOf(r.displayName))) {
     formality = 'formel';
     reason = 'Destinataire avec titre Dr ou Pr';
+  } else if (ctx.greeting) {
+    formality = 'courant';
+    reason = 'Destinataire nommé dans la consigne : ton professionnel courant';
   } else if (recips.length === 0) {
     formality = 'courant';
     reason = 'Destinataire inconnu : ton professionnel courant';
@@ -85,6 +95,7 @@ export function resolveStyle(ctx: StyleContext, text = ''): ResolvedStyle {
     greeting = formality === 'formel' ? 'Madame, Monsieur,' : 'Bonjour,';
   }
 
+  if (ctx.greeting) greeting = ctx.greeting;
   const closing =
     formality === 'formel' ? 'Bien cordialement,' : formality === 'familier' ? 'Bonne journée,' : 'Cordialement,';
   return { formality, greeting, closing, reason };
