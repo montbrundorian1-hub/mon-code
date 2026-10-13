@@ -22,4 +22,5 @@ models/
 !tests/fixtures/dictee-synthetique-fictive.wav
 e2e-results/
 audit-results/
+outlook-mode-results/
 coverage/

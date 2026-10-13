@@ -113,6 +113,35 @@ Dans un **nouveau brouillon de test** (aucun destinataire réel, ou vous-même) 
 5. Dans une **réponse** à un mail de test : vérifier que le message cité reste intact.
 6. **Supprimer le brouillon de test** ensuite.
 
+## 11b. Rédiger à partir d'une consigne
+
+Onglet **Rédiger** → écrire (ou dicter) une consigne, par exemple :
+*« écris un mail au secrétariat pour dire que je serai absent demain matin et demander qu'on décale mes consultations »*.
+- Attendu : « Bonjour, ⏎ Je vous informe que je serai absent demain matin. Serait-il possible qu'on décale mes
+  consultations ? ⏎ Cordialement, » — la consigne n'est **pas recopiée** ; la note « Consigne comprise : … » l'indique.
+- Avec un destinataire titré (« écris un mail au docteur Martin pour lui demander s'il peut me remplacer jeudi ») :
+  « Bonjour Docteur Martin, … Pourriez-vous me remplacer jeudi ? … Bien cordialement, ».
+
+## 11c. Rechercher un mail (dans Outlook)
+
+Le panneau n'a accès qu'au message ouvert : il **prépare** la recherche, c'est **Outlook** qui la lance.
+1. Onglet **Rechercher** → écrire *« mails du secrétariat cette semaine »* (ou toucher un exemple).
+2. Attendu : carte **« Recherche prête pour Outlook »**, par exemple `from:secrétariat received:2026-10-06..2026-10-13`.
+3. **Copier la recherche** → toucher la zone de recherche d'Outlook (loupe, en haut à gauche) → coller → Entrée.
+4. Noter si Outlook comprend les filtres `from:` / `received:` (syntaxe de recherche avancée, ❓ non vérifiée sur
+   l'OWA du CHU). Sinon : utiliser la **version simple** proposée sous la carte, et le bouton **Filtre** d'Outlook.
+
+## 11d. Tablette Android (test réel du 2026-10-13 : lenteurs et échec du chargement signalés)
+
+1. Diagnostic → *Type d'appareil* : attendu **« tablette ou téléphone »** (même en « mode ordinateur » du navigateur).
+2. Dicter → modèle recommandé : **Whisper base, 79 Mo, processeur** (la carte graphique de la tablette n'est plus utilisée).
+3. Si le chargement échoue : bouton **« Copier le détail »** sous le message d'erreur, puis transmettre ce texte
+   (il ne contient aucune donnée personnelle). Si l'échec a eu lieu sur la carte graphique, le bouton
+   **« Réessayer sur le processeur »** est proposé en premier.
+4. Noter la fluidité de la tablette pendant le chargement et pendant la dictée.
+5. Brave : si le téléchargement est bloqué, noter le message ; les boucliers (Shields) peuvent bloquer certains sites
+   (à vérifier avant de modifier un réglage).
+
 ## 12. Identifier une erreur
 
 | Message | Signification | Action |
@@ -121,6 +150,7 @@ Dans un **nouveau brouillon de test** (aucun destinataire réel, ou vous-même) 
 | « bloqué par le cadre Outlook » | OWA n'autorise pas le micro dans le panneau | Fenêtre séparée (§7b) |
 | « Aucun microphone détecté » | Pas de périphérique | Brancher un micro |
 | « Mémoire insuffisante » / « le moteur de calcul s'est arrêté » | Modèle trop lourd | Bouton « Essayer plus léger : … » |
+| « Le modèle n'a pas pu être chargé » | Cause variable (carte graphique, mémoire, navigateur) | « Réessayer sur le processeur » si proposé, sinon « Essayer plus léger » ; **« Copier le détail »** et le transmettre |
 | « Téléchargement impossible » | Réseau / proxy | Autre réseau, ou modèles auto-hébergés |
 | « Insertion impossible » | Outlook a refusé | Bouton « Copier le texte » puis Ctrl+V |
 | « Proposition de l'IA écartée » | La garde de faits a détecté un écart | Normal : relire, garder la version classique |
@@ -156,3 +186,6 @@ Puis, si vous avez activé le cache des modèles : avant de désinstaller, ongle
 | 10 | Rédaction et comparaison | | | |
 | 11 | Insertion au curseur, signature intacte | | | |
 | 11 | Insertion dans une réponse | | | |
+| 11b | Consigne « écris un mail à … pour dire que … » | | | |
+| 11c | Recherche préparée, comprise par Outlook (`from:`, `received:`) | | | |
+| 11d | Tablette : type d'appareil, modèle recommandé, fluidité, détail d'erreur | | | |

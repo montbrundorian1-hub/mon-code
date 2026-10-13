@@ -10,6 +10,7 @@ Captures (données fictives, panneau de 400 px) : [`docs/design/`](design/).
 |---|---|---|
 | ![Dicter](design/light-02-dicter.png) | ![Dictée en cours](design/light-03-dictee-reelle.png) | ![Rédiger](design/dark-06-rediger-resultat.png) |
 | ![Rédiger, accueil](design/light-04-rediger-accueil.png) | ![Rechercher](design/light-11-rechercher.png) | ![Contraste élevé](design/contraste-eleve-rediger.png) |
+| ![Rechercher dans Outlook](design/light-13-recherche-outlook.png) | ![Rechercher dans Outlook (sombre)](design/dark-13-recherche-outlook.png) | |
 
 ## 1. Principes
 
@@ -65,7 +66,7 @@ par le texte ou par `aria-label`.
 
 | Composant | Fichier | Comportement |
 |---|---|---|
-| En-tête en verre | `src/ui/app.ts` | Collant, flou d'arrière-plan, ombre au défilement ; logo-orbe, outils (Modèles, Diagnostic, Aide), badges d'état, bandeau micro. En démonstration, le badge de mode sert aussi de sélecteur (brouillon / message reçu). |
+| En-tête | `src/ui/app.ts` | Collant, fond opaque, ombre au défilement ; logo-orbe, outils (Modèles, Diagnostic, Aide), badges d'état, bandeau micro. En démonstration, le badge de mode sert aussi de sélecteur (brouillon / message reçu). Le flou d'arrière-plan initial a été retiré après le test réel sur tablette (coûteux à chaque défilement). |
 | Navigation segmentée | `src/ui/app.ts` | 4 sections principales ; icône au-dessus du libellé sous 400 px. |
 | Orbe de dictée | `src/components/dictateView.ts` | Bouton principal (démarrer / pause / reprendre). Cœur conique qui tourne pendant l'écoute, halo qui suit le niveau sonore (`--level`), onde à 5 barres. Grisé tant que le modèle n'est pas chargé. |
 | Zone de saisie | `src/components/composer.ts` | S'agrandit avec le texte ; outils à gauche (ton, IA), micro et bouton rond à droite ; Entrée envoie, Maj+Entrée va à la ligne ; pendant un calcul le bouton devient **Arrêter** (`aria-label` mis à jour). |
@@ -75,10 +76,15 @@ par le texte ou par `aria-label`.
 | Carte de modèle | `src/components/modelPanel.ts` | Langage clair (« Dictée vocale », taille, processeur ou carte graphique), recommandé en premier, autres modèles repliés dans Dicter, consentement explicite, progression en dégradé, repli vers plus léger. |
 | Avatars | `src/components/avatar.ts` | Initiales et teinte stable par nom (décoratif). |
 | Notifications | `src/ui/dom.ts` (`toast`) | Pilules sombres en bas, non cliquables (ne masquent jamais un bouton). |
+| Recherche prête pour Outlook | `src/components/searchView.ts` | Dans Outlook : la question devient une recherche à coller (un filtre par bloc insécable), bouton « Copier la recherche », 3 étapes numérotées, légende des filtres, version simple de secours. |
 
 ## 4. Mouvement
 
 Apparitions douces (0,25–0,3 s), orbe et onde pendant l'écoute, reflet animé sur « Rédaction… ».
+**Aucune animation permanente au repos** : depuis le test réel sur tablette (2026-10-13, lenteurs de tout
+l'appareil signalées), les effets continus (respiration de l'orbe, halo flou, flottement) et les flous
+(`backdrop-filter`, `filter: blur`) ont été retirés ; les animations restantes ne tournent que pendant une
+action (écoute, calcul, téléchargement).
 `prefers-reduced-motion: reduce` : toutes les animations et transitions sont neutralisées.
 
 ## 5. Accessibilité

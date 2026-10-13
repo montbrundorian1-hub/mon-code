@@ -8,16 +8,17 @@ Légende : ✅ confirmé (source officielle ou test réel) · 🧪 testé en sim
 |---|---|---|
 | Jeux d'API Mailbox sur Exchange 2016 / 2019 / Subscription Edition | ✅ 1.1 → 1.5 | Microsoft Learn, « Outlook JavaScript API requirement sets », consulté le 2026-10-12. |
 | Version exacte d'Exchange du CHU | ❓ | Inconnue. L'onglet **Diagnostic** affiche les jeux réellement pris en charge et la version du client. |
-| Manifest XML classique (MailApp) accepté | ✅ (structure) / ❓ (CHU) | Même structure que le « Hello world » importé avec succès ; validateur Microsoft : valide. |
+| Manifest XML classique (MailApp) accepté | ✅ | Validateur Microsoft : valide. **Test réel du 2026-10-13** : importé dans OWA par l'utilisateur, panneau ouvert. |
 | Panneau en **rédaction** (`MessageComposeCommandSurface`) | ✅ démontré par « Hello world » | |
-| Panneau en **lecture** (`MessageReadCommandSurface`) | ❓ | Non démontré par « Hello world » (rédaction uniquement). À tester (USER_TESTS §5). |
+| Panneau en **lecture** (`MessageReadCommandSurface`) | ✅ | Test réel du 2026-10-13 (tablette Android, Brave, OWA en affichage ordinateur) : badge « Outlook · lecture ». |
 | `body.setSelectedDataAsync` / `prependAsync` / `getTypeAsync` (insertion) | ✅ Mailbox 1.1 | Doc Microsoft (API set 1.1, mode Compose). 🧪 testé avec Office.js simulé. |
 | `body.getAsync` (lecture du corps) | ✅ Mailbox 1.3 | Refusé proprement si 1.3 absent. |
 | `displayReplyForm` (réponse préremplie, sans envoi) | ✅ Mailbox 1.1 | Mode lecture. |
 | Dialog API (`displayDialogAsync`, fenêtre séparée) | ✅ Mailbox 1.4 attendu | ❓ à vérifier ; repli `window.open`. |
 | Événement `ItemChanged` (panneau épinglé) | Mailbox 1.5 | Non utilisé par défaut (pas d'épinglage dans le manifest V1). |
 | Signature, réponses, brouillons HTML préservés | 🧪 | Insertion au curseur/en tête uniquement, HTML échappé ; jamais `setAsync`. ❓ à confirmer dans OWA (USER_TESTS §11). |
-| EWS / recherche dans toute la boîte | ❌ en V1 | Nécessite `ReadWriteMailbox` + `OAuthAuthentication` côté serveur ([étude](EXCHANGE_SEARCH_FEASIBILITY.md)). |
+| EWS / recherche dans toute la boîte | ❌ en V1 | Nécessite `ReadWriteMailbox` + `OAuthAuthentication` côté serveur ([étude](EXCHANGE_SEARCH_FEASIBILITY.md)). À la place : recherche **préparée** par le panneau et **collée** dans la barre de recherche d'OWA (aucune permission). |
+| Syntaxe de recherche avancée d'OWA (`from:`, `to:`, `received:AAAA-MM-JJ..AAAA-MM-JJ`) | ❓ | Syntaxe documentée pour Outlook sur le web ; non vérifiée sur l'OWA du CHU. Dates au format AAAA-MM-JJ (sans ambiguïté jour/mois). Repli proposé : version simple (mots seuls) + bouton « Filtre » d'Outlook. USER_TESTS §11c. |
 | Synchronisation en arrière-plan | ❌ | Un complément web ne s'exécute que panneau ouvert. |
 | Office.js + CSP de l'application | ✅ hors Outlook / ❓ dans OWA | Office.js est chargé depuis le **CDN officiel actuel** (`officeapis.public.onecdn.static.microsoft/1/office.js`), le même que le « Hello world » validé au CHU. Hors Outlook, cette version lève « hostInfo validation failed » et `Office.onReady` ne répond jamais : l'application détecte donc l'ouverture par Outlook (panneau dans un cadre, ou paramètre `_host_Info`) et passe **immédiatement** en démonstration sinon ; dans Outlook, l'attente est bornée à 10 s. Sa télémétrie (`telemetryservice.firstpartyapps.oaspapps.com`) est **bloquée** par la CSP. Si, dans OWA, le badge reste « Démo », consulter Diagnostic → « Ouverture par Outlook » et « Ressources bloquées par la CSP ». |
 
@@ -81,6 +82,42 @@ Dans le navigateur (Chromium, WASM, 1 thread) : Qwen3-0.6B chargé en 25–41 s,
 | WebGPU | ❓ selon carte graphique et politique Edge du CHU | Accélère fortement Whisper et le LLM. |
 | `navigator.deviceMemory` | plafonné à 8 Go par le navigateur | Estimation grossière seulement. |
 | Stockage (préférences) | ✅ / ❓ bloqué sur certains postes | Sans stockage : préférences non mémorisées, fonctionnement inchangé. |
+
+## 5b. Tablette Android (premier test réel, 2026-10-13)
+
+Appareil de l'utilisateur : Samsung Galaxy Tab S10 Ultra, navigateur **Brave**, OWA en affichage « ordinateur ».
+
+| Constat de l'utilisateur | Cause la plus probable (non vérifiable ici) | Correction |
+|---|---|---|
+| « Hyper lent, toute la tablette lag » | Variante **carte graphique** des modèles (jusqu'à 590 Mo pour Whisper small) : sur une tablette, la carte graphique est partagée avec l'affichage ; plus des effets visuels continus (flous recalculés au défilement, animations permanentes). | Sur tablette/téléphone : **processeur uniquement**, modèles légers en premier (**Whisper base, 79 Mo**) ; flous et animations permanentes retirés pour tous. |
+| « Le modèle n'a pas pu être chargé » | Idem (mémoire graphique), ou blocage par le navigateur. **Cause exacte inconnue.** | Détail technique **visible et copiable** ; « Réessayer sur le processeur » proposé après un échec sur carte graphique. |
+| « La recherche ne marche pas » | La recherche intégrée ne porte que sur des messages fictifs (choix de sécurité de la V1). | Dans Outlook : recherche préparée à coller dans OWA (§1). |
+| « Il réécrit ma commande » | Le mode classique traitait la consigne comme le texte du mail. | Consignes comprises sans IA (`src/ai/intent.ts`). |
+
+Détection de la tablette (`isMobileDevice`) : système mobile annoncé par le navigateur, iPad, **« mode ordinateur »
+d'Android** (le navigateur se présente comme un PC Linux : écran tactile comme pointeur principal, ou processeur ARM
+avec écran tactile, ou carte graphique mobile). Visible dans Diagnostic → « Type d'appareil ».
+
+Vérification en **émulation tablette** (Chromium 141, « mode ordinateur » + écran tactile, `npm run e2e -- --tablet`,
+2026-10-13) — ce n'est **pas** la tablette réelle :
+
+| Vérification | Résultat |
+|---|---|
+| Tablette reconnue, modèle recommandé | ✅ Whisper base, 79 Mo, processeur |
+| Chargement Whisper base (WASM, 1 thread) | ✅ 38–39 s (téléchargement compris) |
+| Dictée fictive de 19 s | ✅ transcrite en 23–24 s ; fil principal libre (0 tâche > 50 ms) |
+| Doses et durées exactes | ❌ « pendant sept jours » → « pendant cette jour » : **limite connue de Whisper base** (Whisper small, plus lent, les transcrit exactement) |
+| Consigne « écris un mail au secrétariat pour dire que… » | ✅ « Bonjour, ⏎ Je vous informe que je serai absent demain matin. Serait-il possible qu'on décale mes consultations ? ⏎ Cordialement, » |
+| Diagnostic « Type d'appareil » | ✅ tablette ou téléphone |
+| Réseau | ✅ GET uniquement vers la liste blanche ; aucune donnée utilisateur stockée |
+
+Mode « Outlook » vérifié dans Chromium avec Office.js simulé (`node scripts/check-outlook-mode.mjs`) : badge
+« Outlook · lecture », recherche préparée `from:secrétariat received:2026-10-06..2026-10-13`, copie dans le
+presse-papiers, 0 violation axe (clair et sombre), aucun défilement horizontal (surveillé à chaque image).
+
+Restent à confirmer **sur la tablette** : fluidité réelle, chargement de Whisper base dans Brave, vitesse de
+transcription (processeur de la tablette ≠ processeur de test). Le micro du **clavier** de la tablette (Gboard,
+Samsung) peut envoyer la voix à un service en ligne : à ne pas utiliser pour des informations médicales.
 
 ## 6. Réseau
 

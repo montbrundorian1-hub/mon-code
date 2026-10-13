@@ -6,7 +6,9 @@
 // - Le modèle Whisper est réellement téléchargé depuis huggingface.co puis exécuté localement.
 // - Toutes les requêtes réseau sont enregistrées et vérifiées (hôtes, méthodes, corps).
 //
-// Usage : npm run build && npm run e2e -- [--asr whisper-small|whisper-base|whisper-tiny] [--llm qwen3-0.6b] [--shots dossier]
+// Usage : npm run build && npm run e2e -- [--asr whisper-small|whisper-base|whisper-tiny] [--llm qwen3-0.6b] [--shots dossier] [--tablet]
+// --tablet : tablette Android en « mode ordinateur » (navigateur présenté comme un PC Linux, écran tactile),
+//            configuration du test réel du 2026-10-13 ; le modèle RECOMMANDÉ est alors utilisé.
 // Variables : CHROMIUM_PATH (défaut : Chromium Playwright préinstallé), HTTPS_PROXY (si nécessaire).
 
 import { createReadStream, existsSync, mkdirSync, statSync, writeFileSync } from 'node:fs';
@@ -22,7 +24,8 @@ const opt = (name, def) => {
   const i = args.indexOf(`--${name}`);
   return i >= 0 ? args[i + 1] : def;
 };
-const ASR = opt('asr', 'whisper-small');
+const TABLET = args.includes('--tablet');
+const ASR = opt('asr', TABLET ? 'whisper-base' : 'whisper-small');
 const LLM = opt('llm', '');
 const SHOTS = opt('shots', join(root, 'e2e-results'));
 const WAV = join(root, 'tests', 'fixtures', 'dictee-synthetique-fictive.wav');
@@ -69,7 +72,22 @@ const browser = await chromium.launch({
   ],
 });
 // ignoreHTTPSErrors : uniquement à cause du proxy TLS de l'environnement de test.
-const context = await browser.newContext({ ignoreHTTPSErrors: true, viewport: { width: 420, height: 900 }, locale: 'fr-FR' });
+const context = await browser.newContext({
+  ignoreHTTPSErrors: true,
+  viewport: { width: 420, height: 900 },
+  locale: 'fr-FR',
+  ...(TABLET ? { hasTouch: true, userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36' } : {}),
+});
+// Tâches longues du fil principal (> 50 ms) : l'interface doit rester fluide pendant les calculs du modèle.
+await context.addInitScript(() => {
+  window.__longTasks = [];
+  try {
+    new PerformanceObserver((l) => l.getEntries().forEach((e) => window.__longTasks.push(Math.round(e.duration)))).observe({ type: 'longtask', buffered: true });
+  } catch {
+    /* non pris en charge */
+  }
+});
+const longTasks = async () => page.evaluate(() => window.__longTasks.splice(0));
 await context.grantPermissions(['microphone'], { origin: BASE.slice(0, -1) });
 
 const requests = [];
@@ -87,10 +105,14 @@ page.on('worker', (w) => {
 
 // Capture pleine page lisible : l'en-tête et la zone de saisie « collants » sont remis dans le flux le temps
 // de la capture (sinon ils apparaissent au milieu de l'image), animations terminées.
+// En mode tablette, la capture pleine page de Playwright désactive l'émulation tactile (constaté :
+// « pointer: coarse » redevient faux) : elle est réactivée après chaque capture.
+const cdp = TABLET ? await context.newCDPSession(page) : null;
 const shot = async (name) => {
   const style = await page.addStyleTag({ content: '.app-header, .composer-dock { position: static !important; }' });
   await page.screenshot({ path: join(SHOTS, `${name}.png`), fullPage: true, animations: 'disabled' });
   await style.evaluate((el) => el.remove());
+  if (cdp) await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 1 });
 };
 const t0 = Date.now();
 try {
@@ -105,6 +127,10 @@ try {
   // 2. Chargement guidé du modèle de transcription (consentement obligatoire)
   await page.getByRole('button', { name: 'J’ai compris' }).click();
   await page.waitForSelector('.model-panel .model-option', { timeout: 30000 });
+  if (TABLET) {
+    const recommended = (await page.locator('.model-panel .model-option').first().innerText()).replace(/\s+/g, ' ');
+    check('Tablette reconnue : modèle léger sur le processeur recommandé', /Whisper base/.test(recommended) && /processeur/.test(recommended), recommended);
+  }
   const label = { 'whisper-small': 'Whisper small', 'whisper-base': 'Whisper base', 'whisper-tiny': 'Whisper tiny' }[ASR];
   const option = page.locator('.model-panel .model-option', { hasText: label });
   // Panneau compact : les modèles autres que le recommandé sont repliés sous « Autres modèles ».
@@ -124,6 +150,7 @@ try {
   if (loadErr) throw new Error(await page.locator('.alert-error').first().textContent());
 
   // 3. Dictée avec micro simulé (audio synthétique fictif)
+  await longTasks();
   const tDict = Date.now();
   await page.locator('.mic-button').click();
   await page.waitForSelector('.mic-badge:not([hidden])', { timeout: 10000 });
@@ -139,7 +166,14 @@ try {
   writeFileSync(join(SHOTS, 'transcription.txt'), transcript);
   const segs = await page.locator('.seg.final').count();
   check('Transcription locale obtenue', transcript.length > 40, `${segs} segment(s), ${Math.round((Date.now() - tDict) / 1000)} s : « ${transcript} »`);
-  check('Doses conservées par la transcription (1 g, 3 fois, 7 jours)', /1\s?g|un gramme/i.test(transcript) && /(3|trois) fois/i.test(transcript) && /(7|sept) jours/i.test(transcript));
+  const lt = await longTasks();
+  check(
+    'Interface fluide pendant la dictée (fil principal libre)',
+    lt.every((d) => d < 200),
+    `${lt.length} tâche(s) > 50 ms, la plus longue : ${lt.length ? Math.max(...lt) : 0} ms (seuil 200 ms)`,
+  );
+  const doses = /1\s?g|un gramme/i.test(transcript) && /(3|trois) fois/i.test(transcript) && /(7|sept) jours/i.test(transcript);
+  check('Doses conservées par la transcription (1 g, 3 fois, 7 jours)', doses, doses || ASR !== 'whisper-base' ? '' : 'limite connue de whisper-base (nombres) : relecture indispensable');
   await shot('05-transcription');
 
   // 4. Génération du mail (mode classique ou IA)
@@ -199,6 +233,22 @@ try {
     }
   }
 
+  // 7 bis. Consigne dans « Rédiger » : le mail est rédigé, la consigne n'est pas recopiée (test réel du 2026-10-13)
+  await page.locator('.tab', { hasText: 'Rédiger' }).click();
+  const fresh = page.getByRole('button', { name: 'Nouveau mail' });
+  if (await fresh.count()) await fresh.first().click();
+  await page.locator('textarea[aria-label="Texte original"]').fill('écris un mail au secrétariat pour dire que je serai absent demain matin et demander qu’on décale mes consultations');
+  await page.locator('#btn-redact').click();
+  await page.waitForSelector('.view-rediger textarea[aria-label="Version rédigée (modifiable)"]', { timeout: 120000 });
+  const fromInstruction = await page.locator('.view-rediger textarea[aria-label="Version rédigée (modifiable)"]').inputValue();
+  writeFileSync(join(SHOTS, 'mail-consigne.txt'), fromInstruction);
+  check(
+    'Consigne comprise (« écris un mail au secrétariat pour dire que… »)',
+    /^Bonjour,\n\nJe vous informe que je serai absent demain matin/.test(fromInstruction) && !/écris un mail/i.test(fromInstruction),
+    fromInstruction.replace(/\n/g, ' ⏎ ').slice(0, 300),
+  );
+  await shot('09b-consigne');
+
   // 8. Recherche fictive
   await page.locator('.tab', { hasText: 'Rechercher' }).click();
   await page.locator('input[type=search]').fill('amoxicilline');
@@ -226,6 +276,7 @@ try {
   const diag = (await page.locator('.view-diagnostic').textContent()) ?? '';
   writeFileSync(join(SHOTS, 'diagnostic.txt'), diag);
   check('Page de diagnostic', /WebAssembly/.test(diag));
+  if (TABLET) check('Diagnostic : appareil reconnu comme tablette ou téléphone', /tablette ou téléphone/i.test(diag), (diag.match(/Type d’appareil.{0,80}/) ?? [''])[0]);
   await shot('12-diagnostic');
 
   // 11. Aucune donnée utilisateur persistée
@@ -251,7 +302,7 @@ try {
   check('Hôtes externes contactés uniquement dans la liste blanche', badHosts.length === 0, hosts.join(', ') || 'aucun');
   check('Aucune requête externe avec envoi de données (POST/corps)', withBody.length === 0, withBody.map((r) => `${r.method} ${r.host}`).join(', '));
   writeFileSync(join(SHOTS, 'requetes-externes.json'), JSON.stringify(external, null, 1));
-  writeFileSync(join(SHOTS, 'resultats.json'), JSON.stringify({ date: new Date().toISOString(), asr: ASR, llm: LLM || null, chromium: browser.version(), results }, null, 1));
+  writeFileSync(join(SHOTS, 'resultats.json'), JSON.stringify({ date: new Date().toISOString(), asr: ASR, llm: LLM || null, tablet: TABLET, chromium: browser.version(), results }, null, 1));
   await browser.close();
   server.close();
   const failed = results.filter((r) => !r.ok).length;

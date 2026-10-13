@@ -1,6 +1,11 @@
 # Étude de faisabilité — recherche dans toute la boîte et synchronisation (Exchange on-premises)
 
-> Statut : **étude seulement**. Aucune de ces fonctions n'est activée en V1. La V1 recherche uniquement dans des messages fictifs intégrés à l'application.
+> Statut : **étude seulement**. Aucune de ces fonctions n'est activée en V1.
+>
+> Ce que fait la V1 (depuis le test réel du 2026-10-13) : **dans Outlook**, l'onglet Rechercher traduit la question
+> (« mails du secrétariat cette semaine ») en recherche à coller dans la barre de recherche du webmail
+> (`from:secrétariat received:2026-10-06..2026-10-13`). C'est Outlook qui cherche : le panneau ne lit pas la boîte et
+> aucune permission supplémentaire n'est demandée. **Hors Outlook**, la démonstration cherche dans des messages fictifs.
 
 ## 1. Ce qu'un complément « ReadWriteItem » peut faire aujourd'hui
 

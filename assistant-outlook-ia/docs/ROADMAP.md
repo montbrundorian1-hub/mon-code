@@ -20,6 +20,14 @@
 - [x] Piste « reconnaissance vocale native » vérifiée : non disponible en français dans Edge ; Whisper conservé.
 - [x] 162 tests, ESLint 0, couverture 80,8 % des lignes, test navigateur réel 22/22 (avec IA locale).
 
+## Retour du premier test réel (2026-10-13, tablette Android + Brave) — corrections livrées
+
+- [x] Rédaction : les consignes (« écris un mail au secrétariat pour dire que… ») sont comprises sans IA ; la consigne n'est plus recopiée.
+- [x] Tablette : modèles légers sur le processeur, plus de variante carte graphique (jusqu'à 590 Mo), détection du « mode ordinateur » ; effets visuels permanents retirés.
+- [x] Échec de chargement : détail technique visible et copiable ; « Réessayer sur le processeur » après un échec sur carte graphique.
+- [x] Recherche : dans Outlook, recherche préparée à coller dans la barre de recherche du webmail.
+- [ ] À confirmer sur la tablette : fluidité, chargement de Whisper base, compréhension de `from:` / `received:` par l'OWA du CHU.
+
 ## Prochaines étapes immédiates (dépendent de vos tests dans le webmail)
 
 1. **Résultats de USER_TESTS.md §5–§7** : surfaces disponibles, jeux d'API réels, micro dans le panneau.

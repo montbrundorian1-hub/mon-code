@@ -1,0 +1,129 @@
+{
+ "date": "2026-10-13T13:20:12.200Z",
+ "asr": "whisper-base",
+ "llm": null,
+ "tablet": true,
+ "chromium": "141.0.7390.37",
+ "results": [
+  {
+   "name": "Démarrage de l’application",
+   "ok": true,
+   "detail": "923 ms"
+  },
+  {
+   "name": "Mode démonstration détecté hors Outlook",
+   "ok": true,
+   "detail": "Démo · rédactionDémo · lecture"
+  },
+  {
+   "name": "Tablette reconnue : modèle léger sur le processeur recommandé",
+   "ok": true,
+   "detail": "Whisper base (multilingue) recommandé 79 Mo · processeur"
+  },
+  {
+   "name": "Téléchargement impossible sans consentement",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "Chargement du modèle whisper-base (WASM)",
+   "ok": true,
+   "detail": "38 s"
+  },
+  {
+   "name": "Indicateur « Micro actif » visible",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "Micro libéré après arrêt",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "Transcription locale obtenue",
+   "ok": true,
+   "detail": "2 segment(s), 24 s : « Bonjour, docteur Martin, je vous écrie au sujet de Madame du pont, vu en consultation le 12 mars. Nous avons débuté l'amoxiceline à un gramme trois fois par jour pendant cette jour. Vous pouvez vous la revoir dans deux semaines. Merci d'avance. »"
+  },
+  {
+   "name": "Interface fluide pendant la dictée (fil principal libre)",
+   "ok": true,
+   "detail": "0 tâche(s) > 50 ms, la plus longue : 0 ms (seuil 200 ms)"
+  },
+  {
+   "name": "Doses conservées par la transcription (1 g, 3 fois, 7 jours)",
+   "ok": false,
+   "detail": "limite connue de whisper-base (nombres) : relecture indispensable"
+  },
+  {
+   "name": "Mail rédigé (mode classique)",
+   "ok": true,
+   "detail": "Bonjour Docteur Martin, ⏎  ⏎ Je vous écrie au sujet de Madame du pont, vu en consultation le 12 mars. Nous avons débuté l'amoxicilline à un gramme trois fois par jour pendant cette jour. Vous pouvez vous la revoir dans deux semaines. ⏎  ⏎ Merci d'avance."
+  },
+  {
+   "name": "Panneau de vérification affiché",
+   "ok": true,
+   "detail": "1 point à vérifier | Correction automatique à vérifier : « l'amoxiceline » → « l'amoxicilline » (Nom de médicament reconstitué). |  | Moteur : Mode classique (règles, sans IA)"
+  },
+  {
+   "name": "Comparaison original / rédigé",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "Commande « transforme en liste »",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "Annuler restaure la version précédente",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "Insertion dans le brouillon simulé, signature conservée",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "Consigne comprise (« écris un mail au secrétariat pour dire que… »)",
+   "ok": true,
+   "detail": "Bonjour, ⏎  ⏎ Je vous informe que je serai absent demain matin. Serait-il possible qu'on décale mes consultations ? ⏎  ⏎ Cordialement,"
+  },
+  {
+   "name": "Recherche sur messages fictifs",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "Réponse guidée à un message fictif",
+   "ok": true,
+   "detail": "Bonjour Docteur Fictif, ⏎  ⏎ Oui pour jeudi, je prépare la présentation et je veux bien les résultats de biologie. ⏎  ⏎ Bien cordialement,"
+  },
+  {
+   "name": "Page de diagnostic",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "Diagnostic : appareil reconnu comme tablette ou téléphone",
+   "ok": true,
+   "detail": "Type d’appareiltablette ou téléphoneInfoCalcul sur le processeur uniquement, avec des modèles l"
+  },
+  {
+   "name": "Aucun contenu utilisateur dans localStorage/sessionStorage/IndexedDB",
+   "ok": true,
+   "detail": "{\"local\":[\"aoia.settings.v1\"],\"session\":[],\"idb\":[],\"caches\":[]}"
+  },
+  {
+   "name": "Hôtes externes contactés uniquement dans la liste blanche",
+   "ok": true,
+   "detail": "officeapis.public.onecdn.static.microsoft, huggingface.co, us.aws.cdn.hf.co"
+  },
+  {
+   "name": "Aucune requête externe avec envoi de données (POST/corps)",
+   "ok": true,
+   "detail": ""
+  }
+ ]
+}

@@ -19,12 +19,15 @@ thèmes clair et sombre, accessible (WCAG AA, contraste élevé). Voir [docs/DES
 | **Dictée locale Whisper** (WASM, sans GPU) | ✅ | Test navigateur avec micro simulé (audio synthétique fictif) : whisper-small, transcription exacte des doses et dates. |
 | Transcription « en direct » | ⚠️ par segments | Le texte apparaît après chaque pause ; texte provisoire seulement si le poste est rapide (WebGPU). |
 | **Rédaction classique (sans IA)** : nettoyage, ponctuation, formules adaptées au destinataire | ✅ | Tests unitaires + navigateur. |
+| **Consignes** : « écris un mail au secrétariat pour dire que… », « demande au Dr Martin s'il peut… » → mail rédigé (la consigne n'est plus recopiée) | ✅ | Tests unitaires + navigateur (corrige le retour du test réel du 2026-10-13). |
 | Rédaction par **IA locale** (Qwen) | ⚠️ expérimental | Fonctionne dans le navigateur (Qwen3-0.6B : ~60 s par mail sur processeur) ; propositions contrôlées et écartées si elles altèrent dates, doses, nombres, médicaments, noms, questions ou négations. |
 | Comparaison original / rédigé, consignes écrites ou dictées (« plus court », « en liste », « remplace X par Y »…), bouton **Arrêter** pendant une génération | ✅ | Tests + navigateur. |
 | Vérifications (dates, doses, nombres, médicaments) recalculées après chaque modification | ✅ | Tests. |
 | Insertion dans le brouillon (au curseur / en tête), signature conservée, aucun envoi | ✅ simulé | Office.js simulé + brouillon de démonstration. **À confirmer dans le webmail** (docs/USER_TESTS.md §11). |
 | Réponse (proposition / guidée / assistant) | ✅ | Tests sur messages fictifs. |
-| Recherche | ⚠️ démonstration | Messages fictifs uniquement ; boîte réelle désactivée ([étude](docs/EXCHANGE_SEARCH_FEASIBILITY.md)). |
+| Recherche | ⚠️ assistée | **Dans Outlook** : la question devient une recherche à coller dans la barre de recherche du webmail (`from:`, `received:`…) — Outlook cherche, le panneau ne lit pas la boîte. Hors Outlook : messages fictifs. Recherche intégrée au panneau désactivée ([étude](docs/EXCHANGE_SEARCH_FEASIBILITY.md)). |
+| Panneau dans le webmail (OWA) | ✅ | Test réel du 2026-10-13 (tablette Android, Brave) : panneau ouvert, badge « Outlook · lecture ». |
+| Tablette Android | ⚠️ lent | Lenteurs et échec du chargement signalés au test réel → modèles légers sur le processeur (Whisper base, 79 Mo), carte graphique non utilisée, effets visuels allégés ; vérifié en émulation tablette ([COMPATIBILITY.md §5b](docs/COMPATIBILITY.md)). **À confirmer sur la tablette.** |
 | Micro **dans le panneau OWA** | ❓ à tester | Dépend de la page hôte d'OWA ; repli : dictée en fenêtre séparée. |
 
 ## Démarrage rapide
@@ -32,7 +35,7 @@ thèmes clair et sombre, accessible (WCAG AA, contraste élevé). Voir [docs/DES
 ```bash
 cd assistant-outlook-ia
 npm install
-npm test            # 162 tests automatisés
+npm test            # 186 tests automatisés
 npm run lint        # analyse statique (0 erreur)
 npm run dev         # http://localhost:3000 dans Edge (mode démonstration)
 ```
@@ -85,4 +88,5 @@ npm run dev         # http://localhost:3000 dans Edge (mode démonstration)
 - Les petits modèles de rédaction se trompent : l'IA est optionnelle, contrôlée, et la version sans IA reste toujours disponible.
 - Le micro peut être bloqué dans le cadre d'OWA (fenêtre séparée proposée).
 - Postes du CHU : le téléchargement depuis huggingface.co peut être filtré (auto-hébergement possible).
-- Recherche dans la boîte réelle : impossible avec `ReadWriteItem`, non activée.
+- Recherche : le panneau ne lit pas la boîte (`ReadWriteItem`) ; il prépare une recherche que vous collez dans Outlook.
+- Tablette : l'IA locale de rédaction est très lente ; la dictée utilise un modèle léger (Whisper base) qui se trompe plus souvent sur les nombres : relire.
