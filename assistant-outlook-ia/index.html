@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!--
+      Politique de sécurité du contenu (CSP). Hébergement statique : déclarée en balise meta.
+      - Scripts : application + Office.js (CDN Microsoft, obligatoire pour un complément Outlook).
+      - 'wasm-unsafe-eval' : nécessaire à ONNX Runtime Web (inférence WebAssembly locale).
+      - Connexions sortantes : application, Office.js, et téléchargement des poids de modèles
+        (Hugging Face) uniquement. Doublé par le garde réseau applicatif (src/security/networkGuard.ts).
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' https://officeapis.public.onecdn.static.microsoft https://appsforoffice.microsoft.com 'wasm-unsafe-eval'; connect-src 'self' https://officeapis.public.onecdn.static.microsoft https://appsforoffice.microsoft.com https://huggingface.co https://*.huggingface.co https://*.hf.co; worker-src 'self' blob:; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self'; media-src 'self' blob:; frame-src 'self' https://officeapis.public.onecdn.static.microsoft https://appsforoffice.microsoft.com; object-src 'none'; base-uri 'self'; form-action 'none'"
+    />
+    <meta name="referrer" content="no-referrer" />
+    <!-- Complément privé : ne pas indexer dans les moteurs de recherche. -->
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="description" content="Assistant de dictée et de rédaction pour Outlook, avec IA open source exécutée localement." />
+    <meta name="color-scheme" content="light dark" />
+    <title>Assistant Outlook IA</title>
+    <link rel="icon" type="image/png" href="./assets/icon-32.png" />
+    <!--
+      Office.js : CDN officiel actuel de Microsoft, chargé dans <head> de façon synchrone (exigence Microsoft).
+      Même adresse que le complément « Hello world » validé dans le webmail du CHU.
+      Hors d'Outlook, ce script signale « hostInfo validation failed » dans la console : c'est attendu,
+      l'application passe alors immédiatement en mode démonstration (voir src/outlook/bootstrap.ts).
+    -->
+    <script src="https://officeapis.public.onecdn.static.microsoft/1/office.js"></script>
+  </head>
+  <body>
+    <div id="app" class="app">
+      <p class="boot">Chargement de l’assistant…</p>
+    </div>
+    <noscript>JavaScript est nécessaire pour utiliser l’Assistant Outlook IA.</noscript>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

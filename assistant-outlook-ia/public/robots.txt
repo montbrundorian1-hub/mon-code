@@ -1,0 +1,3 @@
+# Complément Outlook privé : aucune indexation.
+User-agent: *
+Disallow: /

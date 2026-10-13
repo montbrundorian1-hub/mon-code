@@ -1,0 +1,430 @@
+{
+ "axe": {
+  "Dicter-450-light": [
+   {
+    "id": "page-has-heading-one",
+    "impact": "moderate",
+    "help": "Page should contain a level-one heading",
+    "n": 1,
+    "sample": [
+     "html"
+    ]
+   },
+   {
+    "id": "region",
+    "impact": "moderate",
+    "help": "All page content should be contained by landmarks",
+    "n": 1,
+    "sample": [
+     "div:nth-child(4)"
+    ]
+   }
+  ],
+  "Rédiger-450-light": [
+   {
+    "id": "page-has-heading-one",
+    "impact": "moderate",
+    "help": "Page should contain a level-one heading",
+    "n": 1,
+    "sample": [
+     "html"
+    ]
+   },
+   {
+    "id": "region",
+    "impact": "moderate",
+    "help": "All page content should be contained by landmarks",
+    "n": 1,
+    "sample": [
+     "#app > div:nth-child(4)"
+    ]
+   }
+  ],
+  "Répondre-450-light": [
+   {
+    "id": "page-has-heading-one",
+    "impact": "moderate",
+    "help": "Page should contain a level-one heading",
+    "n": 1,
+    "sample": [
+     "html"
+    ]
+   },
+   {
+    "id": "region",
+    "impact": "moderate",
+    "help": "All page content should be contained by landmarks",
+    "n": 1,
+    "sample": [
+     "#app > div:nth-child(4)"
+    ]
+   }
+  ],
+  "Rechercher-450-light": [
+   {
+    "id": "page-has-heading-one",
+    "impact": "moderate",
+    "help": "Page should contain a level-one heading",
+    "n": 1,
+    "sample": [
+     "html"
+    ]
+   },
+   {
+    "id": "region",
+    "impact": "moderate",
+    "help": "All page content should be contained by landmarks",
+    "n": 1,
+    "sample": [
+     "div:nth-child(4)"
+    ]
+   }
+  ],
+  "Modèles-450-light": [
+   {
+    "id": "page-has-heading-one",
+    "impact": "moderate",
+    "help": "Page should contain a level-one heading",
+    "n": 1,
+    "sample": [
+     "html"
+    ]
+   },
+   {
+    "id": "region",
+    "impact": "moderate",
+    "help": "All page content should be contained by landmarks",
+    "n": 1,
+    "sample": [
+     "div:nth-child(4)"
+    ]
+   }
+  ],
+  "Diagnostic-450-light": [
+   {
+    "id": "page-has-heading-one",
+    "impact": "moderate",
+    "help": "Page should contain a level-one heading",
+    "n": 1,
+    "sample": [
+     "html"
+    ]
+   },
+   {
+    "id": "region",
+    "impact": "moderate",
+    "help": "All page content should be contained by landmarks",
+    "n": 1,
+    "sample": [
+     "div:nth-child(4)"
+    ]
+   }
+  ],
+  "Aide-450-light": [
+   {
+    "id": "page-has-heading-one",
+    "impact": "moderate",
+    "help": "Page should contain a level-one heading",
+    "n": 1,
+    "sample": [
+     "html"
+    ]
+   },
+   {
+    "id": "region",
+    "impact": "moderate",
+    "help": "All page content should be contained by landmarks",
+    "n": 1,
+    "sample": [
+     "div:nth-child(4)"
+    ]
+   }
+  ],
+  "Dicter-450-dark": [
+   {
+    "id": "page-has-heading-one",
+    "impact": "moderate",
+    "help": "Page should contain a level-one heading",
+    "n": 1,
+    "sample": [
+     "html"
+    ]
+   },
+   {
+    "id": "region",
+    "impact": "moderate",
+    "help": "All page content should be contained by landmarks",
+    "n": 1,
+    "sample": [
+     "div:nth-child(4)"
+    ]
+   }
+  ],
+  "Rédiger-450-dark": [
+   {
+    "id": "color-contrast",
+    "impact": "serious",
+    "help": "Elements must meet minimum color contrast ratio thresholds",
+    "n": 2,
+    "sample": [
+     "#btn-redact",
+     "#btn-insert-draft"
+    ]
+   },
+   {
+    "id": "page-has-heading-one",
+    "impact": "moderate",
+    "help": "Page should contain a level-one heading",
+    "n": 1,
+    "sample": [
+     "html"
+    ]
+   },
+   {
+    "id": "region",
+    "impact": "moderate",
+    "help": "All page content should be contained by landmarks",
+    "n": 1,
+    "sample": [
+     "#app > div:nth-child(4)"
+    ]
+   }
+  ],
+  "Répondre-450-dark": [
+   {
+    "id": "color-contrast",
+    "impact": "serious",
+    "help": "Elements must meet minimum color contrast ratio thresholds",
+    "n": 3,
+    "sample": [
+     "#btn-analyze",
+     "#btn-reply",
+     ".insert-bar > .row > .btn-primary.btn"
+    ]
+   },
+   {
+    "id": "page-has-heading-one",
+    "impact": "moderate",
+    "help": "Page should contain a level-one heading",
+    "n": 1,
+    "sample": [
+     "html"
+    ]
+   },
+   {
+    "id": "region",
+    "impact": "moderate",
+    "help": "All page content should be contained by landmarks",
+    "n": 1,
+    "sample": [
+     "#app > div:nth-child(4)"
+    ]
+   }
+  ],
+  "Rechercher-450-dark": [
+   {
+    "id": "color-contrast",
+    "impact": "serious",
+    "help": "Elements must meet minimum color contrast ratio thresholds",
+    "n": 1,
+    "sample": [
+     ".btn-primary"
+    ]
+   },
+   {
+    "id": "page-has-heading-one",
+    "impact": "moderate",
+    "help": "Page should contain a level-one heading",
+    "n": 1,
+    "sample": [
+     "html"
+    ]
+   },
+   {
+    "id": "region",
+    "impact": "moderate",
+    "help": "All page content should be contained by landmarks",
+    "n": 1,
+    "sample": [
+     "div:nth-child(4)"
+    ]
+   }
+  ],
+  "Modèles-450-dark": [
+   {
+    "id": "page-has-heading-one",
+    "impact": "moderate",
+    "help": "Page should contain a level-one heading",
+    "n": 1,
+    "sample": [
+     "html"
+    ]
+   },
+   {
+    "id": "region",
+    "impact": "moderate",
+    "help": "All page content should be contained by landmarks",
+    "n": 1,
+    "sample": [
+     "div:nth-child(4)"
+    ]
+   }
+  ],
+  "Diagnostic-450-dark": [
+   {
+    "id": "page-has-heading-one",
+    "impact": "moderate",
+    "help": "Page should contain a level-one heading",
+    "n": 1,
+    "sample": [
+     "html"
+    ]
+   },
+   {
+    "id": "region",
+    "impact": "moderate",
+    "help": "All page content should be contained by landmarks",
+    "n": 1,
+    "sample": [
+     "div:nth-child(4)"
+    ]
+   }
+  ],
+  "Aide-450-dark": [
+   {
+    "id": "page-has-heading-one",
+    "impact": "moderate",
+    "help": "Page should contain a level-one heading",
+    "n": 1,
+    "sample": [
+     "html"
+    ]
+   },
+   {
+    "id": "region",
+    "impact": "moderate",
+    "help": "All page content should be contained by landmarks",
+    "n": 1,
+    "sample": [
+     "div:nth-child(4)"
+    ]
+   }
+  ]
+ },
+ "overflow": [
+  "Rédiger-320-light: +54px button.tab , span.tab-label, button.tab secondary, svg.[object SVGAnimatedString], path.[object SVGAnimatedString]",
+  "Répondre-320-light: +277px button.tab , span.tab-label, button.tab secondary, svg.[object SVGAnimatedString], path.[object SVGAnimatedString]",
+  "Modèles-320-light: +9px select.",
+  "Rédiger-320-dark: +54px button.tab , span.tab-label, button.tab secondary, svg.[object SVGAnimatedString], path.[object SVGAnimatedString]",
+  "Répondre-320-dark: +277px button.tab , span.tab-label, button.tab secondary, svg.[object SVGAnimatedString], path.[object SVGAnimatedString]",
+  "Modèles-320-dark: +9px select.",
+  "Répondre-450-light: +147px button.tab secondary, svg.[object SVGAnimatedString], path.[object SVGAnimatedString], select.",
+  "Répondre-450-dark: +147px button.tab secondary, svg.[object SVGAnimatedString], path.[object SVGAnimatedString], select."
+ ],
+ "smallTargets": {
+  "Dicter": [
+   "select.demo-switch « Simuler : brouillonSimule » 152×22",
+   "input «  » 13×13",
+   "input «  » 13×13",
+   "input «  » 13×13",
+   "input «  » 13×13"
+  ],
+  "Rédiger": [
+   "select.demo-switch « Simuler : brouillonSimule » 152×22",
+   "input «  » 13×13"
+  ],
+  "Répondre": [
+   "select.demo-switch « Simuler : brouillonSimule » 152×22",
+   "summary « Afficher le message » 274×17"
+  ],
+  "Rechercher": [
+   "select.demo-switch « Simuler : brouillonSimule » 152×22",
+   "button.chip « mails du Dr Fictif en mar » 160×19",
+   "button.chip « amoxicilline » 82×19",
+   "button.chip « documents de stage envoyé » 182×19",
+   "button.chip « planning des gardes » 131×19"
+  ],
+  "Modèles": [
+   "select.demo-switch « Simuler : brouillonSimule » 152×22",
+   "input «  » 13×13",
+   "input «  » 13×13",
+   "input «  » 13×13",
+   "input «  » 13×13",
+   "input «  » 13×13",
+   "input «  » 13×13",
+   "input «  » 13×13",
+   "input «  » 13×13",
+   "input «  » 13×13",
+   "input «  » 13×13"
+  ],
+  "Diagnostic": [
+   "select.demo-switch « Simuler : brouillonSimule » 152×22"
+  ],
+  "Aide": [
+   "select.demo-switch « Simuler : brouillonSimule » 152×22"
+  ]
+ },
+ "smallText": {
+  "Dicter": [
+   "span.badge 11px",
+   "span.chip 11px",
+   "footer.app-footer 11px"
+  ],
+  "Rédiger": [
+   "span.badge 11px",
+   "footer.app-footer 11px"
+  ],
+  "Répondre": [
+   "span.badge 11px",
+   "footer.app-footer 11px"
+  ],
+  "Rechercher": [
+   "span.badge 11px",
+   "span.chip 11px",
+   "footer.app-footer 11px"
+  ],
+  "Modèles": [
+   "span.badge 11px",
+   "span.chip 11px",
+   "footer.app-footer 11px"
+  ],
+  "Diagnostic": [
+   "span.badge 11px",
+   "footer.app-footer 11px"
+  ],
+  "Aide": [
+   "span.badge 11px",
+   "footer.app-footer 11px"
+  ]
+ },
+ "console": [
+  "320/light: Failed to create WebGPU Context Provider",
+  "320/light: Failed to create WebGPU Context Provider",
+  "320/dark: Failed to create WebGPU Context Provider",
+  "320/dark: Failed to create WebGPU Context Provider",
+  "450/light: Failed to create WebGPU Context Provider",
+  "450/light: Failed to create WebGPU Context Provider",
+  "450/dark: Failed to create WebGPU Context Provider",
+  "450/dark: Failed to create WebGPU Context Provider"
+ ],
+ "tabOrder": [
+  "input «  »",
+  "input «  »",
+  "body « Assistant Outlook IADémo · lec » [focus peu visible]",
+  "select « Simulation Outlook »",
+  "button « Dicter »",
+  "button « Rédiger »",
+  "button « Répondre »",
+  "button « Rechercher »",
+  "button « Modèles »",
+  "button « Diagnostic »",
+  "button « Aide »",
+  "button « J’ai compris »",
+  "input «  »",
+  "input «  »",
+  "body « Assistant Outlook IADémo · lec » [focus peu visible]",
+  "select « Simulation Outlook »",
+  "button « Dicter »",
+  "button « Rédiger »"
+ ]
+}
