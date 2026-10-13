@@ -1,13 +1,18 @@
 /**
- * Onglet « Rechercher » : recherche en langage naturel sur des messages FICTIFS uniquement.
+ * Onglet « Rechercher ».
+ *  - Dans Outlook : la question est traduite en recherche à coller dans la barre de recherche
+ *    d'Outlook (le panneau n'a pas l'autorisation de parcourir la boîte : Outlook fait la recherche).
+ *  - En démonstration : recherche sur des messages FICTIFS intégrés.
  */
 
 import { DemoMailHost } from '../mock/demoHost';
 import { DEMO_MESSAGES } from '../mock/messages';
-import { DemoSearchProvider, ExchangeSearchProvider, highlightParts, parseQuery, type SearchQuery } from '../search/search';
+import { DemoSearchProvider, ExchangeSearchProvider, highlightParts, outlookSearchQuery, parseQuery, SERVICE_SENDERS, type SearchQuery } from '../search/search';
 import type { AppContext } from '../ui/context';
-import { announce, button, h, icon, replace } from '../ui/dom';
+import { announce, button, copyText, h, icon, replace, toast } from '../ui/dom';
 import { avatar } from './avatar';
+
+const OUTLOOK_EXAMPLES = ['mails du Dr Martin en mars', 'messages du secrétariat cette semaine', 'planning des gardes', 'documents de stage envoyés'];
 
 /** Date de référence fixe pour que les exemples fictifs (mars 2026) restent pertinents. */
 const DEMO_NOW = new Date('2026-03-15T12:00:00');
@@ -18,6 +23,7 @@ function marked(text: string, matched: string[]): Node[] {
 }
 
 export function searchView(ctx: AppContext): HTMLElement {
+  if (ctx.host.info().kind === 'office') return outlookSearchView();
   const provider = new DemoSearchProvider(DEMO_MESSAGES);
   const real = new ExchangeSearchProvider();
   const root = h('div', { class: 'view view-rechercher' });
@@ -33,7 +39,8 @@ export function searchView(ctx: AppContext): HTMLElement {
     if (q.folder) chips.push([`dossier : ${q.folder}`, 'inbox']);
     if (q.after) chips.push([`depuis le ${q.after.toLocaleDateString('fr-FR')}`, 'clock']);
     if (q.before) chips.push([`avant le ${q.before.toLocaleDateString('fr-FR')}`, 'clock']);
-    if (q.terms.length) chips.push([`mots-clés : ${q.terms.join(', ')}`, 'search']);
+    const words = q.words?.length ? q.words : q.terms;
+    if (words.length) chips.push([`mots-clés : ${words.join(', ')}`, 'search']);
     replace(parsed, ...chips.map(([c, ic]) => h('span', { class: 'chip' }, icon(ic), c)));
   };
 
@@ -120,6 +127,119 @@ export function searchView(ctx: AppContext): HTMLElement {
       { class: 'alert alert-info demo-note' },
       icon('info'),
       h('div', {}, h('strong', {}, 'Démonstration. '), 'La recherche porte uniquement sur des messages fictifs intégrés à l’application. ', h('span', { class: 'block small' }, `Boîte réelle : ${real.unavailableReason()}`)),
+    ),
+  );
+  return root;
+}
+
+/** Dans Outlook : prépare une recherche à coller dans la barre de recherche du webmail. */
+function outlookSearchView(): HTMLElement {
+  const root = h('div', { class: 'view view-rechercher' });
+  const input = h('input', { type: 'search', class: 'search-input', placeholder: 'Ex. : mails du Dr Martin en mars sur le staff', 'aria-label': 'Recherche', enterkeyhint: 'search' });
+  const out = h('div', { class: 'results', 'aria-live': 'polite' });
+
+  const copy = async (text: string) => {
+    const ok = await copyText(text);
+    toast(ok ? 'Recherche copiée : collez-la dans « Rechercher » en haut à gauche d’Outlook.' : 'Copie impossible : sélectionnez la recherche et copiez-la.', ok ? 'ok' : 'error', 6000);
+  };
+
+  const run = (text: string) => {
+    if (!text.trim()) {
+      input.focus();
+      return;
+    }
+    const q = parseQuery(text, new Date(), SERVICE_SENDERS);
+    const os = outlookSearchQuery(q);
+    if (!os.precise && !os.simple) {
+      replace(out, h('p', { class: 'results-count' }, 'Indiquez au moins un mot, un expéditeur ou une période.'));
+      return;
+    }
+    const chips: string[] = [];
+    if (q.from) chips.push(`de : ${q.from}`);
+    if (q.to) chips.push(`à : ${q.to}`);
+    if (q.participant) chips.push(`avec : ${q.participant}`);
+    if (q.folder) chips.push(`dossier : ${q.folder}`);
+    if (q.words?.length) chips.push(`mots-clés : ${q.words.join(', ')}`);
+    const legend = [
+      os.precise.includes('from:') ? 'from: = expéditeur' : '',
+      os.precise.includes('to:') ? 'to: = destinataire' : '',
+      os.precise.includes('received:') ? 'received: = date de réception' : '',
+    ].filter(Boolean);
+    replace(
+      out,
+      h(
+        'section',
+        { class: 'card outlook-search' },
+        h('div', { class: 'card-head' }, h('h2', {}, 'Recherche prête pour Outlook')),
+        h('p', { class: 'query-box', 'aria-label': 'Recherche à coller' }, os.precise),
+        legend.length ? h('p', { class: 'muted small' }, legend.join(' · ')) : null,
+        h('div', { class: 'row' }, button('Copier la recherche', () => void copy(os.precise), { kind: 'primary', icon: 'copy', id: 'btn-copy-search' })),
+        h(
+          'ol',
+          { class: 'steps compact-steps' },
+          h('li', {}, h('strong', {}, 'Copiez'), h('span', {}, 'la recherche (bouton ci-dessus).')),
+          h('li', {}, h('strong', {}, 'Touchez la zone de recherche'), h('span', {}, 'd’Outlook (loupe, en haut à gauche).')),
+          h('li', {}, h('strong', {}, 'Collez'), h('span', {}, 'puis validez avec Entrée (sur tablette : appui long → Coller).')),
+        ),
+        ...os.tips.map((t) => h('p', { class: 'muted small' }, t)),
+        os.simple && os.simple !== os.precise
+          ? h(
+              'p',
+              { class: 'muted small' },
+              'Si Outlook ne trouve rien ou ne comprend pas les filtres, essayez la version simple : ',
+              button(os.simple, () => void copy(os.simple), { kind: 'link', size: 'sm', title: 'Copier la version simple' }),
+            )
+          : null,
+        chips.length ? h('div', { class: 'chips filters', 'aria-label': 'Critères compris' }, ...chips.map((c) => h('span', { class: 'chip' }, c))) : null,
+      ),
+    );
+    announce('Recherche prête : copiez-la puis collez-la dans la barre de recherche d’Outlook.');
+  };
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') run(input.value);
+  });
+  const submit = h('button', { type: 'button', class: 'send-btn search-go', 'aria-label': 'Préparer la recherche', title: 'Préparer la recherche' }, icon('arrow-right'));
+  submit.addEventListener('click', () => run(input.value));
+
+  root.append(
+    h(
+      'section',
+      { class: 'hero compact' },
+      h('h2', { class: 'hero-title' }, 'Retrouver un mail'),
+      h('p', { class: 'hero-sub' }, 'Décrivez ce que vous cherchez : l’assistant prépare la recherche, Outlook la lance dans votre boîte.'),
+    ),
+    h('div', { class: 'search-box' }, icon('search'), input, submit),
+    h(
+      'div',
+      { class: 'chips examples', role: 'group', 'aria-label': 'Exemples' },
+      ...OUTLOOK_EXAMPLES.map((ex) =>
+        h(
+          'button',
+          {
+            type: 'button',
+            class: 'chip chip-btn',
+            onclick: () => {
+              input.value = ex;
+              run(ex);
+            },
+          },
+          ex,
+        ),
+      ),
+    ),
+    out,
+    h(
+      'div',
+      { class: 'alert alert-info demo-note' },
+      icon('info'),
+      h(
+        'div',
+        {},
+        h('strong', {}, 'Pourquoi pas directement ici ? '),
+        'Par sécurité, le panneau n’a accès qu’au message ouvert, pas à toute votre boîte. C’est donc Outlook qui fait la recherche. ',
+        h('span', { class: 'block small' }, 'Une recherche intégrée au panneau demanderait l’accès complet à la boîte (permission « ReadWriteMailbox ») et l’accord du CHU.'),
+      ),
     ),
   );
   return root;

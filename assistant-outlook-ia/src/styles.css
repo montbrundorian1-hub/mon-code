@@ -2131,6 +2131,23 @@ mark {
   margin-top: 2px;
   margin-left: -10px;
 }
+.query-box {
+  margin: 4px 0 2px;
+  padding: 10px 12px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--r-sm);
+  background: var(--surface-1);
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  font-size: 13.5px;
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+.outlook-search .steps {
+  margin-top: 10px;
+}
+.outlook-search .chips {
+  margin-top: 8px;
+}
 
 /* ---------- Modèles et réglages ---------- */
 .panel-head {

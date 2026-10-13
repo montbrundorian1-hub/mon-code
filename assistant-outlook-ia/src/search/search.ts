@@ -1,9 +1,11 @@
 /**
  * Recherche en langage naturel.
  *
- * V1 : uniquement sur des messages FICTIFS (DemoSearchProvider), en mémoire.
- * La recherche sur la boîte réelle (ExchangeSearchProvider) est volontairement DÉSACTIVÉE :
- * elle exigerait des permissions étendues (ReadWriteMailbox / EWS) et l'autorisation du CHU.
+ * - Démonstration : recherche sur des messages FICTIFS (DemoSearchProvider), en mémoire.
+ * - Dans Outlook : la question est traduite en recherche à coller dans la barre de recherche du webmail
+ *   (outlookSearchQuery) ; c'est Outlook qui cherche, le panneau ne lit pas la boîte.
+ * La recherche DANS le panneau sur la boîte réelle (ExchangeSearchProvider) est volontairement
+ * DÉSACTIVÉE : elle exigerait des permissions étendues (ReadWriteMailbox / EWS) et l'autorisation du CHU.
  * Voir docs/ROADMAP.md et docs/COMPATIBILITY.md.
  */
 
@@ -13,7 +15,10 @@ import type { DemoMessage } from '../mock/messages';
 
 export interface SearchQuery {
   raw: string;
+  /** Mots-clés racinisés (comparaison). */
   terms: string[];
+  /** Mots-clés tels que saisis (affichage, recherche Outlook). */
+  words?: string[];
   from?: string;
   to?: string;
   /** Personne présente comme expéditeur OU destinataire (« avec … »). */
@@ -62,7 +67,21 @@ const QUERY_STOP = new Set(
   ),
 );
 
-const TITLE = '(?:dr\\.?|docteur|pr\\.?|professeur|mme|madame|m\\.|monsieur|la|le|l\')';
+/**
+ * Titres et articles devant un nom, éventuellement enchaînés (« du Dr Martin », « avec le Pr Dupont »,
+ * « de la pharmacie »). « pr » doit être un mot entier : « à propos » n'est pas « à Pr opos ».
+ */
+const TITLES = "(?:(?:(?:dr|docteur|pr|professeur|mme|madame|mlle|mademoiselle|m|monsieur|la|le)\\b\\.?|l')\\s*)+";
+const TITLED = /\b(dr|docteur|pr|professeur|mme|madame|mlle|mademoiselle|monsieur|m)\b/;
+
+/** Mots de titre : jamais des mots-clés de recherche. */
+const TITLE_WORDS = new Set(['dr', 'docteur', 'pr', 'professeur', 'mme', 'madame', 'mlle', 'mademoiselle', 'monsieur']);
+
+/**
+ * Expéditeurs « génériques » reconnus même en minuscules (« mails du secrétariat ») quand la liste des
+ * personnes n'est pas connue (dans Outlook, le panneau ne lit pas la boîte).
+ */
+export const SERVICE_SENDERS: ReadonlySet<string> = new Set(['secretariat', 'pharmacie', 'laboratoire', 'labo', 'direction', 'scolarite', 'drh', 'dsi', 'admissions', 'standard', 'accueil', 'faculte', 'decanat', 'doyen', 'doyenne']);
 
 /** Jetons de noms de personnes/services connus (expéditeurs et destinataires), normalisés. */
 export function peopleTokens(messages: DemoMessage[]): Set<string> {
@@ -82,35 +101,42 @@ export function peopleTokens(messages: DemoMessage[]): Set<string> {
  * « de X » / « du X » ne désigne un expéditeur que si X est un nom connu, écrit avec une majuscule,
  * ou précédé d'un titre (« du Dr Fictif ») : « documents de stage » reste une recherche par mots-clés.
  */
-export function parseQuery(raw: string, now: Date = new Date(), known: Set<string> = new Set()): SearchQuery {
-  let s = ` ${stripAccents(raw.toLowerCase())} `;
-  const rawNorm = ` ${stripAccents(raw)} `;
+export function parseQuery(raw: string, now: Date = new Date(), known: ReadonlySet<string> = new Set()): SearchQuery {
+  // Apostrophe typographique (claviers de tablette) ; « recherche les mails… » : verbe de commande.
+  const text = raw.replace(/[’‘]/g, "'");
+  let s = ` ${stripAccents(text.toLowerCase())} `.replace(
+    /^\s*(?:je\s+)?(?:re)?cherch(?:e|er|ez)\s+(?=(?:les?|la|l'|des|un|une|mes|mon|ma|tous|toutes|mails?|messages?|courriels?|e-?mails?)\b)/,
+    ' ',
+  );
+  const rawTokens = stripAccents(text).match(/[A-Za-z0-9-]+/g) ?? [];
   const q: SearchQuery = { raw, terms: [] };
 
-  if (/\b(envoyes?|que j'ai envoye|mes envois)\b/.test(s)) q.folder = 'envoyés';
+  // « envoyés à Martin » : mes envois ; « envoyés par Martin » : messages reçus.
+  if (/\b(envoyes?(?! par\b)|que j'ai envoye|mes envois)\b/.test(s)) q.folder = 'envoyés';
   else if (/\b(recus?|qu'on m'a envoye)\b/.test(s)) q.folder = 'reçus';
 
   const isPerson = (word: string, titled: boolean): boolean => {
-    if (QUERY_STOP.has(word) || MONTHS.includes(word) || word === 'propos') return false;
     if (titled || known.has(word)) return true;
-    // Majuscule dans la saisie d'origine (« mails de Martin »).
-    return new RegExp(`\\b${word.charAt(0).toUpperCase()}${word.slice(1)}\\b`).test(rawNorm);
+    // Majuscule dans la saisie d'origine (« mails de Martin », « de Dupont-Moreau »).
+    return rawTokens.some((t) => /^[A-Z]/.test(t) && t.toLowerCase() === word);
   };
+  // Toutes les occurrences sont examinées : « documents de stage du Dr Martin » → « Martin ».
   const take = (re: RegExp, explicit: boolean): string | undefined => {
-    const m = s.match(re);
-    if (!m) return undefined;
-    const titled = /\b(dr|docteur|pr|professeur|mme|madame|monsieur|m)\b/.test(m[1] ?? '');
-    const word = m[2];
-    if (!word || !(explicit || isPerson(word, titled))) return undefined;
-    s = s.replace(m[0], ' ');
-    return word;
+    for (const m of s.matchAll(new RegExp(re.source, 'g'))) {
+      const word = m[2];
+      if (!word || QUERY_STOP.has(word) || TITLE_WORDS.has(word) || MONTHS.includes(word) || word === 'propos') continue;
+      if (!explicit && !isPerson(word, TITLED.test(m[1] ?? ''))) continue;
+      s = s.replace(m[0], ' ');
+      return word;
+    }
+    return undefined;
   };
 
   q.from =
-    take(new RegExp(`\\b(?:de la part (?:de|du)|venant (?:de|du)|envoyes? par|recus? (?:de|du))\\s+(${TITLE}\\s*)?([a-z][a-z-]{2,})`), true) ??
-    take(new RegExp(`\\b(?:de|du|des)\\s+(${TITLE}\\s*)?([a-z][a-z-]{2,})`), false);
-  q.to = take(new RegExp(`\\b(?:a|pour|destines? a|envoyes? a)\\s+(${TITLE}\\s*)?([a-z][a-z-]{2,})`), false);
-  q.participant = take(new RegExp(`\\b(?:avec|echanges? avec)\\s+(${TITLE}\\s*)?([a-z][a-z-]{2,})`), false);
+    take(new RegExp(`\\b(?:de la part (?:de|du)|venant (?:de|du)|envoyes? par|recus? (?:de|du))\\s+(${TITLES})?([a-z][a-z-]{2,})`), true) ??
+    take(new RegExp(`\\b(?:(?:de|du|des)\\s+|d')(${TITLES})?([a-z][a-z-]{2,})`), false);
+  q.to = take(new RegExp(`\\b(?:a|pour|destines? a|envoyes? a)\\s+(${TITLES})?([a-z][a-z-]{2,})`), false);
+  q.participant = take(new RegExp(`\\b(?:avec|echanges? avec)\\s+(${TITLES})?([a-z][a-z-]{2,})`), false);
   if (!q.from) delete q.from;
   if (!q.to) delete q.to;
   if (!q.participant) delete q.participant;
@@ -126,22 +152,77 @@ export function parseQuery(raw: string, now: Date = new Date(), known: Set<strin
     q.after = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
     q.before = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   }
-  const month = MONTHS.findIndex((mo) => new RegExp(`\\ben ${mo}\\b`).test(s));
+  // « en mars », « de mars », « au mois d'avril », « en mars 2025 » (sans année : le dernier mois écoulé de ce nom).
+  const monthRe = (mo: string) => new RegExp(`\\b(?:en|au mois d'|au mois de|du mois d'|du mois de|de|d')\\s*${mo}\\b(?:\\s+(20\\d\\d)\\b)?`);
+  const month = MONTHS.findIndex((mo) => monthRe(mo).test(s));
   if (month >= 0) {
-    const year = month > now.getMonth() ? now.getFullYear() - 1 : now.getFullYear();
+    const m = s.match(monthRe(MONTHS[month]));
+    const year = m?.[1] ? Number(m[1]) : month > now.getMonth() ? now.getFullYear() - 1 : now.getFullYear();
     q.after = new Date(year, month, 1);
     q.before = new Date(year, month + 1, 1);
-    s = s.replace(new RegExp(`\\ben ${MONTHS[month]}\\b`), ' ');
+    s = s.replace(monthRe(MONTHS[month]), ' ');
   }
   s = s.replace(/\b(cette semaine|la semaine (derniere|passee)|ce mois-ci|ce mois|aujourd'hui|hier)\b/g, ' ');
 
-  const words = (s.match(/[a-z0-9-]+/g) ?? []).filter((w) => w.length > 1 && !QUERY_STOP.has(w));
+  const words = (s.match(/[a-z0-9-]+/g) ?? []).filter((w) => w.length > 1 && !QUERY_STOP.has(w) && !TITLE_WORDS.has(w));
   const terms = new Set<string>();
   for (const w of words) {
     for (const syn of SYNONYMS[w] ?? [w]) terms.add(stem(syn));
   }
   q.terms = [...terms];
+  // Mots d'origine (avec accents) pour l'affichage et la recherche dans Outlook.
+  const kept = new Set(words);
+  q.words = [...new Set((text.toLowerCase().match(/[\p{L}\p{N}-]+/gu) ?? []).filter((t) => kept.has(stripAccents(t))))];
   return q;
+}
+
+/** Mot d'origine (accents compris) correspondant à un nom normalisé (« secretariat » → « secrétariat »). */
+function originalWord(raw: string, normalized: string): string {
+  const hit = (raw.match(/[\p{L}\p{N}-]+/gu) ?? []).find((t) => stripAccents(t.toLowerCase()) === normalized);
+  return hit ?? normalized;
+}
+
+const pad = (n: number) => String(n).padStart(2, '0');
+const frDate = (d: Date) => `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
+/** Date AAAA-MM-JJ : comprise quelle que soit la langue d'Outlook (pas d'ambiguïté jour/mois). */
+const isoDate = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
+export interface OutlookSearch {
+  /** Recherche avec filtres (syntaxe de recherche avancée d'Outlook : from:, to:, received:). */
+  precise: string;
+  /** Recherche simple (mots seulement), toujours comprise par Outlook. */
+  simple: string;
+  /** Conseils d'utilisation (dossier à ouvrir, dates…). */
+  tips: string[];
+}
+
+/**
+ * Traduit une question en recherche à coller dans la barre de recherche d'Outlook (webmail).
+ * Aucune permission n'est nécessaire : le panneau ne lit pas la boîte, Outlook fait la recherche.
+ */
+export function outlookSearchQuery(q: SearchQuery): OutlookSearch {
+  const quote = (v: string) => (/\s/.test(v) ? `"${v}"` : v);
+  const words = q.words ?? q.terms;
+  const from = q.from ? originalWord(q.raw, q.from) : null;
+  const to = q.to ? originalWord(q.raw, q.to) : null;
+  const participant = q.participant ? originalWord(q.raw, q.participant) : null;
+  const precise: string[] = [];
+  if (from) precise.push(`from:${quote(from)}`);
+  if (to) precise.push(`to:${quote(to)}`);
+  if (participant) precise.push(participant);
+  precise.push(...words);
+  const tips: string[] = [];
+  if (q.after || q.before) {
+    // « before » est exclusif : le dernier jour inclus est la veille.
+    const end = q.before ? new Date(q.before.getFullYear(), q.before.getMonth(), q.before.getDate() - 1) : new Date();
+    const start = q.after ?? end;
+    const same = isoDate(start) === isoDate(end);
+    precise.push(same ? `received:${isoDate(start)}` : `received:${isoDate(start)}..${isoDate(end)}`);
+    tips.push(same ? `Période comprise : le ${frDate(start)}.` : `Période comprise : du ${frDate(start)} au ${frDate(end)}.`);
+  }
+  if (q.folder === 'envoyés') tips.push('Messages envoyés : dans Outlook, ouvrez « Éléments envoyés » (ou choisissez « Tous les dossiers ») avant de lancer la recherche.');
+  const simple = [from, to, participant, ...words].filter(Boolean).join(' ');
+  return { precise: precise.join(' ').trim(), simple: simple.trim(), tips };
 }
 
 /** Vrai si la requête contient un filtre autre que les mots-clés. */

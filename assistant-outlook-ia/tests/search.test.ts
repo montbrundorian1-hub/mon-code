@@ -1,8 +1,11 @@
-// Cas 28 : recherche simulée sur des messages fictifs ; recherche réelle désactivée.
-import { describe, expect, it } from 'vitest';
+// Cas 28 : recherche simulée sur des messages fictifs ; recherche réelle désactivée ;
+// dans Outlook, question traduite en recherche à coller dans le webmail.
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { analyzeMail, autoReplySkeleton } from '../src/ai/analyze';
+import { searchView } from '../src/components/searchView';
 import { DEMO_MESSAGES } from '../src/mock/messages';
-import { DemoSearchProvider, ExchangeSearchProvider, parseQuery, searchMessages } from '../src/search/search';
+import { DemoSearchProvider, ExchangeSearchProvider, outlookSearchQuery, parseQuery, searchMessages, SERVICE_SENDERS } from '../src/search/search';
+import type { AppContext } from '../src/ui/context';
 
 const NOW = new Date('2026-03-15T12:00:00');
 
@@ -98,5 +101,93 @@ describe('Corrections de l’audit n°2 — recherche', () => {
 
   it('les mots retrouvés sont indiqués pour la mise en évidence', () => {
     expect(run('amoxicilline')[0].matched).toContain('amoxicillin');
+  });
+});
+
+describe('Recherche dans Outlook : question traduite en recherche à coller (test réel du 2026-10-13)', () => {
+  const TODAY = new Date('2026-10-13T12:00:00');
+  const outlook = (text: string) => outlookSearchQuery(parseQuery(text, TODAY, SERVICE_SENDERS));
+
+  it('expéditeur et mois : filtres de la recherche avancée, dates sans ambiguïté jour/mois', () => {
+    expect(outlook('mails du Dr Martin en mars')).toEqual({
+      precise: 'from:Martin received:2026-03-01..2026-03-31',
+      simple: 'Martin',
+      tips: ['Période comprise : du 01/03/2026 au 31/03/2026.'],
+    });
+    expect(outlook('mails du Dr Fictif en mars sur le staff').precise).toBe('from:Fictif staff received:2026-03-01..2026-03-31');
+    expect(outlook('Mails du Pr. Dupont au mois d’avril').precise).toBe('from:Dupont received:2026-04-01..2026-04-30');
+    expect(outlook('mails de mars 2025').precise).toBe('received:2025-03-01..2025-03-31');
+    expect(outlook('hier')).toMatchObject({ precise: 'received:2026-10-12', simple: '', tips: ['Période comprise : le 12/10/2026.'] });
+  });
+
+  it('services connus même en minuscules, accents conservés', () => {
+    expect(outlook('messages du secrétariat cette semaine').precise).toBe('from:secrétariat received:2026-10-06..2026-10-13');
+    expect(outlook('recherche les mails de la pharmacie').precise).toBe('from:pharmacie');
+    expect(parseQuery('réunion pédagogique', TODAY).words).toEqual(['réunion', 'pédagogique']);
+  });
+
+  it('« à propos » n’est pas un destinataire « Pr opos » ; toutes les occurrences de « de » sont examinées', () => {
+    const q = parseQuery('réponse du secrétariat à propos du congé', TODAY, SERVICE_SENDERS);
+    expect(q.to).toBeUndefined();
+    expect(outlook('réponse du secrétariat à propos du congé').precise).toBe('from:secrétariat congé');
+    expect(outlook('documents de stage du Dr Martin').precise).toBe('from:Martin documents stage');
+  });
+
+  it('noms composés, apostrophe typographique, titres enchaînés', () => {
+    expect(outlook("mails de Dupont-Moreau sur l'évaluation").precise).toBe('from:Dupont-Moreau évaluation');
+    expect(outlook('mails d’Hélène sur la garde').precise).toBe('from:Hélène garde');
+    const q = parseQuery('échanges avec le Dr Fictif', TODAY);
+    expect(q.participant).toBe('fictif');
+    expect(q.words).toEqual([]);
+  });
+
+  it('dossier : « envoyés à » = mes envois, « envoyés par » = messages reçus', () => {
+    const sent = outlook('mails envoyés à Martin');
+    expect(sent.precise).toBe('to:Martin');
+    expect(sent.tips.join(' ')).toMatch(/Éléments envoyés/);
+    expect(parseQuery('envoyés par mes collègues', TODAY).folder).toBeUndefined();
+  });
+
+  it('question sans critère : rien à chercher', () => {
+    expect(outlook('les mails')).toEqual({ precise: '', simple: '', tips: [] });
+  });
+
+  describe('vue « Rechercher » dans Outlook', () => {
+    const officeCtx = { host: { info: () => ({ kind: 'office' }) } } as unknown as AppContext;
+    afterEach(() => {
+      document.body.innerHTML = '';
+    });
+
+    it('prépare la recherche et la copie ; aucune donnée fictive ni lecture de la boîte', async () => {
+      const writeText = vi.fn().mockResolvedValue(undefined);
+      Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+      const view = searchView(officeCtx);
+      document.body.append(view);
+      expect(view.textContent).not.toMatch(/fictif/i);
+      expect(view.textContent).toMatch(/ReadWriteMailbox/);
+      const example = [...view.querySelectorAll<HTMLButtonElement>('.examples .chip-btn')].find((b) => b.textContent === 'mails du Dr Martin en mars')!;
+      example.click();
+      const box = view.querySelector('.query-box')!;
+      expect(box.textContent).toMatch(/^from:Martin received:\d{4}-03-01\.\.\d{4}-03-31$/);
+      expect(view.textContent).toMatch(/from: = expéditeur · received: = date de réception/);
+      view.querySelector<HTMLButtonElement>('#btn-copy-search')!.click();
+      await new Promise((r) => setTimeout(r, 0));
+      expect(writeText).toHaveBeenCalledWith(box.textContent);
+      Reflect.deleteProperty(navigator, 'clipboard');
+    });
+
+    it('saisie libre : Entrée prépare la recherche, saisie vide ne fait rien', () => {
+      const view = searchView(officeCtx);
+      document.body.append(view);
+      const input = view.querySelector<HTMLInputElement>('.search-input')!;
+      input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+      expect(view.querySelector('.query-box')).toBeNull();
+      input.value = 'planning des gardes';
+      input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+      expect(view.querySelector('.query-box')?.textContent).toBe('planning gardes');
+      input.value = 'les mails';
+      input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+      expect(view.textContent).toMatch(/Indiquez au moins un mot/);
+    });
   });
 });
